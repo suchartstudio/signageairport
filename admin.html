@@ -1,15 +1,15 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="lo">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FIDS Admin - Luang Prabang (With Edit & Logo)</title>
-    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&display=swap" rel="stylesheet">
+    <title>FIDS Admin - Luang Prabang (Lao Default)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=Noto+Sans+Lao:wght@400;600&display=swap" rel="stylesheet">
     <style>
         body {
             background-color: #1a1a1a;
             color: #ffffff;
-            font-family: 'Chakra Petch', sans-serif;
+            font-family: 'Noto Sans Lao', 'Chakra Petch', sans-serif;
             padding: 20px;
             max-width: 800px;
             margin: 0 auto;
@@ -24,7 +24,7 @@
         input, select {
             padding: 12px;
             font-size: 1.2rem;
-            font-family: 'Chakra Petch', sans-serif;
+            font-family: 'Noto Sans Lao', 'Chakra Petch', sans-serif;
             background: #333;
             color: white;
             border: 1px solid #555;
@@ -54,53 +54,52 @@
 </head>
 <body>
 
-    <h2 id="form-title">Control Panel - Add New Flight</h2>
+    <h2 id="form-title">ແຜງຄວບຄຸມ - ເພີ່ມຖ້ຽວບິນໃໝ່</h2>
 
     <form id="addFlightForm">
         <div class="form-group">
-            <label>Time (HH:MM)</label>
+            <label>ເວລາ (Time - HH:MM)</label>
             <input type="time" id="time" required>
         </div>
         <div class="form-group">
-            <label>Flight No. (e.g. QV101)</label>
+            <label>Flight No. (ເຊັ່ນ: QV101)</label>
             <input type="text" id="flightNo" required>
         </div>
         <div class="form-group">
-            <label>Airline Name</label>
-            <input type="text" id="airline" required>
+            <label>ສາຍການບິນ (Airline - ເຊັ່ນ: ການບິນລາວ, ແອເອເຊຍ)</label>
+            <input type="text" id="airline" placeholder="ປ້ອນສາຍການບິນເປັນພາສາລາວ" required>
         </div>
-        <!-- เพิ่มช่องใส่ Logo ที่นี่ -->
         <div class="form-group">
-            <label>Airline Logo Image URL (Optional)</label>
+            <label>ໂລໂກ້ URL ສາຍການບิน (Airline Logo URL - ຖ້າມີ)</label>
             <input type="url" id="logoUrl" placeholder="https://example.com/logo.png">
         </div>
         <div class="form-group">
-            <label>Destination</label>
-            <input type="text" id="destination" required>
+            <label>ປາຍທາງ (Destination - ເຊັ່ນ: ວຽງຈັນ, ບາງກອກ, ຮ່າໂນ້ຍ)</label>
+            <input type="text" id="destination" placeholder="ປ້ອນປາຍທາງເປັນພາສາລາວ" required>
         </div>
         <div class="form-group">
-            <label>Gate</label>
+            <label>ປະຕູອອກ (Gate)</label>
             <input type="text" id="gate" required>
         </div>
         <div class="form-group">
-            <label>Status</label>
+            <label>ສະຖານະ (Status)</label>
             <select id="status">
-                <option value="ON TIME">ON TIME</option>
-                <option value="BOARDING">BOARDING</option>
-                <option value="FINAL CALL">FINAL CALL</option>
-                <option value="DELAYED">DELAYED</option>
-                <option value="CANCELLED">CANCELLED</option>
+                <option value="ກົງເວລາ">ກົງເວລາ (ON TIME)</option>
+                <option value="ກຳລັງຂຶ້ນເຄື່ອງ">ກຳລັງຂຶ້ນເຄື່ອງ (BOARDING)</option>
+                <option value="ເອີ້ນຂຶ້ນເຄື່ອງຄັ້ງສຸດທ້າຍ">ເອີ້ນຂຶ້ນເຄື່ອງຄັ້ງສຸດທ້າຍ (FINAL CALL)</option>
+                <option value="ຊັກຊ້າ">ຊັກຊ້າ (DELAYED)</option>
+                <option value="ຍົກເລີກ">ຍົກເລີກ (CANCELLED)</option>
             </select>
         </div>
         
         <div class="btn-container">
-            <button type="submit" id="submitBtn">SAVE FLIGHT</button>
-            <button type="button" id="cancelEditBtn">CANCEL EDIT</button>
+            <button type="submit" id="submitBtn">ບັນທຶກຖ້ຽວບິນ</button>
+            <button type="button" id="cancelEditBtn">ຍົກເລີກການແກ້ໄຂ</button>
         </div>
     </form>
 
     <div class="flight-list">
-        <h2>Active Flights</h2>
+        <h2>ຖ້ຽວບິນທີ່ກຳລັງປະຕິບັດການ (Active Flights)</h2>
         <div id="admin-flight-data"></div>
     </div>
 
@@ -133,8 +132,8 @@
         function resetFormMode() {
             editFlightId = null;
             form.reset();
-            formTitle.textContent = "Control Panel - Add New Flight";
-            submitBtn.textContent = "SAVE FLIGHT";
+            formTitle.textContent = "ແຜງຄວບຄຸມ - ເພີ່ມຖ້ຽວບິນໃໝ່";
+            submitBtn.textContent = "ບັນທຶກຖ້ຽວບິນ";
             cancelEditBtn.style.display = "none";
         }
 
@@ -144,10 +143,10 @@
             const flightData = {
                 time: document.getElementById('time').value,
                 flightNo: document.getElementById('flightNo').value.toUpperCase(),
-                airline: document.getElementById('airline').value,
-                logoUrl: document.getElementById('logoUrl').value, // ดึงค่า Logo URL
-                destination: document.getElementById('destination').value.toUpperCase(),
-                gate: document.getElementById('gate').value,
+                airline: document.getElementById('airline').value.trim(),
+                logoUrl: document.getElementById('logoUrl').value.trim(),
+                destination: document.getElementById('destination').value.trim(),
+                gate: document.getElementById('gate').value.trim(),
                 status: document.getElementById('status').value
             };
 
@@ -182,8 +181,8 @@
                             ${flight.destination} (Gate: ${flight.gate}) - <span style="color:#ffcc00">${flight.status}</span>
                         </div>
                         <div class="action-btns">
-                            <button class="edit-btn" data-id="${flight.id}">Edit</button>
-                            <button class="delete-btn" data-id="${flight.id}">Remove</button>
+                            <button class="edit-btn" data-id="${flight.id}">ແກ้ໄຂ</button>
+                            <button class="delete-btn" data-id="${flight.id}">ລຶບ</button>
                         </div>
                     `;
                     listContainer.appendChild(item);
@@ -199,13 +198,13 @@
                             document.getElementById('time').value = flight.time;
                             document.getElementById('flightNo').value = flight.flightNo;
                             document.getElementById('airline').value = flight.airline;
-                            document.getElementById('logoUrl').value = flight.logoUrl || ""; // โหลด Logo URL เก่า
+                            document.getElementById('logoUrl').value = flight.logoUrl || "";
                             document.getElementById('destination').value = flight.destination;
                             document.getElementById('gate').value = flight.gate;
                             document.getElementById('status').value = flight.status;
 
-                            formTitle.textContent = `Control Panel - Editing Flight [${flight.flightNo}]`;
-                            submitBtn.textContent = "UPDATE FLIGHT";
+                            formTitle.textContent = `ແຜງຄວບຄຸມ - ກຳລັງແກ້ໄຂ [${flight.flightNo}]`;
+                            submitBtn.textContent = "ອັບເດດຖ້ຽວບິນ";
                             cancelEditBtn.style.display = "block";
                             window.scrollTo({ top: 0, behavior: 'smooth' });
                         }
@@ -215,7 +214,7 @@
                 document.querySelectorAll('.delete-btn').forEach(btn => {
                     btn.addEventListener('click', (e) => {
                         const id = e.target.getAttribute('data-id');
-                        if (confirm("Are you sure you want to delete this flight?")) {
+                        if (confirm("ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການລຶບຖ້ຽວບິນນີ້?")) {
                             remove(ref(db, `flights/${id}`));
                             if (editFlightId === id) resetFormMode();
                         }
