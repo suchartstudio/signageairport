@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FIDS Admin - Luang Prabang</title>
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: #ffffff;
+            font-family: 'Chakra Petch', sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h2 { border-bottom: 2px solid #ffcc00; padding-bottom: 10px; }
+        .form-group {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+        label { font-size: 1.2rem; margin-bottom: 5px; color: #ffcc00; }
+        input, select {
+            padding: 12px;
+            font-size: 1.2rem;
+            font-family: 'Chakra Petch', sans-serif;
+            background: #333;
+            color: white;
+            border: 1px solid #555;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #ffcc00;
+            color: #000;
+            font-size: 1.5rem;
+            font-weight: bold;
+            padding: 15px;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+            width: 100%;
+            margin-top: 10px;
+        }
+        button:hover { background-color: #e6b800; }
+        
+        .flight-list { margin-top: 40px; }
+        .flight-item {
+            background: #2a2a2a;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .delete-btn {
+            background-color: #ff3333;
+            color: white;
+            width: auto;
+            padding: 8px 15px;
+            font-size: 1rem;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Control Panel - Flight Updates</h2>
+
+    <form id="addFlightForm">
+        <div class="form-group">
+            <label>Time (HH:MM)</label>
+            <input type="time" id="time" required>
+        </div>
+        <div class="form-group">
+            <label>Flight No. (e.g. QV101)</label>
+            <input type="text" id="flightNo" required>
+        </div>
+        <div class="form-group">
+            <label>Airline</label>
+            <input type="text" id="airline" required>
+        </div>
+        <div class="form-group">
+            <label>Destination</label>
+            <input type="text" id="destination" required>
+        </div>
+        <div class="form-group">
+            <label>Gate</label>
+            <input type="text" id="gate" required>
+        </div>
+        <div class="form-group">
+            <label>Status</label>
+            <select id="status">
+                <option value="ON TIME">ON TIME</option>
+                <option value="BOARDING">BOARDING</option>
+                <option value="FINAL CALL">FINAL CALL</option>
+                <option value="DELAYED">DELAYED</option>
+                <option value="CANCELLED">CANCELLED</option>
+            </select>
+        </div>
+        <button type="submit">SAVE FLIGHT</button>
+    </form>
+
+    <div class="flight-list">
+        <h2>Active Flights</h2>
+        <div id="admin-flight-data"></div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+        import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDMptdLpLEdbeVFKZj82M0gyoV2m_2y5Pk",
+            authDomain: "suchartstudio-9a78d.firebaseapp.com",
+            databaseURL: "https://suchartstudio-9a78d-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "suchartstudio-9a78d",
+            storageBucket: "suchartstudio-9a78d.firebasestorage.app",
+            messagingSenderId: "953369646185",
+            appId: "1:953369646185:web:6e52decfba29e9936ebef8"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const flightsRef = ref(db, 'flights');
+
+        // บันทึกข้อมูล
+        document.getElementById('addFlightForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const newFlight = {
+                time: document.getElementById('time').value,
+                flightNo: document.getElementById('flightNo').value.toUpperCase(),
+                airline: document.getElementById('airline').value,
+                destination: document.getElementById('destination').value.toUpperCase(),
+                gate: document.getElementById('gate').value,
+                status: document.getElementById('status').value
+            };
+            push(flightsRef, newFlight);
+            e.target.reset(); // ล้างฟอร์ม
+        });
+
+        // แสดงและลบข้อมูล
+        onValue(flightsRef, (snapshot) => {
+            const data = snapshot.val();
+            const listContainer = document.getElementById('admin-flight-data');
+            listContainer.innerHTML = '';
+
+            if (data) {
+                Object.entries(data).forEach(([key, flight]) => {
+                    const item = document.createElement('div');
+                    item.className = 'flight-item';
+                    item.innerHTML = `
+                        <div>
+                            <strong>${flight.time} - ${flight.flightNo}</strong><br>
+                            ${flight.destination} (Gate: ${flight.gate}) - <span style="color:#ffcc00">${flight.status}</span>
+                        </div>
+                        <button class="delete-btn" data-id="${key}">Remove</button>
+                    `;
+                    listContainer.appendChild(item);
+                });
+
+                // ผูก Event ให้ปุ่มลบ
+                document.querySelectorAll('.delete-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const id = e.target.getAttribute('data-id');
+                        remove(ref(db, `flights/${id}`));
+                    });
+                });
+            }
+        });
+    </script>
+</body>
+</html>
