@@ -63,25 +63,23 @@
         }
         .time-col { color: var(--accent-yellow); width: 10%; }
         .flight-col { width: 12%; color: #fff; }
-        .logo-col { width: 8%; text-align: center; } /* คอลัมน์ Logo */
+        .logo-col { width: 8%; text-align: center; }
         .airline-col { width: 18%; }
         .dest-col { width: 22%; }
         .gate-col { width: 10%; text-align: center; }
         .status-col { width: 20%; text-align: right; }
         
-        /* ตกแต่งโลโก้ */
         .airline-logo {
             height: 40px;
             max-width: 100px;
             object-fit: contain;
-            background-color: #ffffff; /* พื้นหลังขาวช่วยให้โลโก้เด่นขึ้นบนจอดำ */
+            background-color: #ffffff; 
             padding: 4px 8px;
             border-radius: 6px;
             display: block;
             margin: 0 auto;
         }
 
-        /* Status Colors */
         .status-ON-TIME { color: var(--status-ontime); }
         .status-DELAYED { color: var(--status-delayed); }
         .status-BOARDING { color: var(--status-boarding); animation: blink 1.5s infinite; }
@@ -107,7 +105,6 @@
         <thead>
             <tr>
                 <th class="time-col" id="th-time">Time</th>
-                <!-- Flight No. จะไม่ถูกแปลภาษา -->
                 <th class="flight-col" id="th-flight">Flight No.</th>
                 <th class="logo-col" id="th-logo">Logo</th>
                 <th class="airline-col" id="th-airline">Airline</th>
@@ -136,29 +133,61 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // --- พจนานุกรมสำหรับสลับภาษา ---
+        // --- คลังรูปภาพโลโก้สายการบินอัตโนมัติ (จับคู่จากชื่อที่กรอก) ---
+        const autoAirlineLogos = {
+            "LAO AIRLINES": "https://upload.wikimedia.org/wikipedia/commons/2/20/Lao_Airlines_logo.svg",
+            "AIRASIA": "https://upload.wikimedia.org/wikipedia/commons/f/f5/AirAsia_New_Logo.svg",
+            "THAI AIRASIA": "https://upload.wikimedia.org/wikipedia/commons/f/f5/AirAsia_New_Logo.svg",
+            "BANGKOK AIRWAYS": "https://upload.wikimedia.org/wikipedia/commons/e/e0/Bangkok_Airways_logo.svg",
+            "THAI AIRWAYS": "https://upload.wikimedia.org/wikipedia/commons/c/c6/Thai_Airways_International_logo.svg",
+            "VIETNAM AIRLINES": "https://upload.wikimedia.org/wikipedia/commons/d/d7/Vietnam_Airlines_logo_2015.svg",
+            "CHINA EASTERN": "https://upload.wikimedia.org/wikipedia/commons/a/aa/China_Eastern_Airlines_logo.svg",
+            "SCOOT": "https://upload.wikimedia.org/wikipedia/commons/4/42/Scoot_Logo.svg"
+        };
+
+        // --- พจนานุกรมแปลภาษาตามมาตรฐานสนามบินหลวงพระบาง ---
         const dictionary = {
             en: {
                 title: "DEPARTURES",
                 headers: { time: "Time", flight: "Flight No.", logo: "Logo", airline: "Airline", dest: "Destination", gate: "Gate", status: "Status" },
                 status: { "ON TIME": "ON TIME", "BOARDING": "BOARDING", "FINAL CALL": "FINAL CALL", "DELAYED": "DELAYED", "CANCELLED": "CANCELLED" },
-                places: { "VIENTIANE": "VIENTIANE", "BANGKOK": "BANGKOK", "HANOI": "HANOI", "CHIANG MAI": "CHIANG MAI", "SIEM REAP": "SIEM REAP", "KUALA LUMPUR": "KUALA LUMPUR" },
-                airlines: { "LAO AIRLINES": "LAO AIRLINES", "THAI AIRWAYS": "THAI AIRWAYS", "AIRASIA": "AIRASIA", "BANGKOK AIRWAYS": "BANGKOK AIRWAYS" }
+                places: { 
+                    "VIENTIANE": "VIENTIANE", "BANGKOK": "BANGKOK", "HANOI": "HANOI", 
+                    "CHIANG MAI": "CHIANG MAI", "SIEM REAP": "SIEM REAP", "KUNMING": "KUNMING" 
+                },
+                airlines: { 
+                    "LAO AIRLINES": "LAO AIRLINES", "AIRASIA": "AIRASIA", "THAI AIRASIA": "THAI AIRASIA",
+                    "BANGKOK AIRWAYS": "BANGKOK AIRWAYS", "THAI AIRWAYS": "THAI AIRWAYS", 
+                    "VIETNAM AIRLINES": "VIETNAM AIRLINES", "CHINA EASTERN": "CHINA EASTERN", "SCOOT": "SCOOT"
+                }
             },
             lo: {
                 title: "ຂາອອກ (DEPARTURES)",
-                // สังเกตว่า flight ถูกฟิกซ์เป็น Flight No. ไว้
-                headers: { time: "ເວລາ", flight: "Flight No.", logo: "ໂລໂກ້", airline: "ສາຍການບິນ", dest: "ປາຍທາງ", gate: "ປະຕູອອກ", status: "ສະຖານະ" },
+                headers: { time: "ເວລາ", flight: "Flight No.", logo: "ໂລໂກ້", airline: "ສายການບິນ", dest: "ປາຍທາງ", gate: "ປະຕູອອກ", status: "ສະຖານະ" },
                 status: { "ON TIME": "ກົງເວລາ", "BOARDING": "ກຳລັງຂຶ້ນເຄື່ອງ", "FINAL CALL": "ເອີ້ນຂຶ້ນເຄື່ອງຄັ້ງສຸດທ້າຍ", "DELAYED": "ຊັກຊ້າ", "CANCELLED": "ຍົກເລີກ" },
-                places: { "VIENTIANE": "ວຽງຈັນ", "BANGKOK": "ບາງກອກ", "HANOI": "ຮ່າໂນ້ຍ", "CHIANG MAI": "ຊຽງໃໝ່", "SIEM REAP": "ສຽມຣຽບ", "KUALA LUMPUR": "ກົວລາລຳເປີ" },
-                airlines: { "LAO AIRLINES": "ການບິນລາວ", "THAI AIRWAYS": "ການບິນໄທ", "AIRASIA": "ແອເອເຊຍ", "BANGKOK AIRWAYS": "ບາງກອກແອເວ" }
+                places: { 
+                    "VIENTIANE": "ວຽງຈັນ", "BANGKOK": "ບາງກອກ", "HANOI": "ຮ່າໂນ້ຍ", 
+                    "CHIANG MAI": "ຊຽງໃໝ່", "SIEM REAP": "ສຽມຣຽບ", "KUNMING": "ຄຸນໝິງ" 
+                },
+                airlines: { 
+                    "LAO AIRLINES": "ການບินລາວ", "AIRASIA": "ແອເອເຊຍ", "THAI AIRASIA": "ໄທແອເອເຊย",
+                    "BANGKOK AIRWAYS": "ບາງກອກແອເວ", "THAI AIRWAYS": "ການບินໄທ", 
+                    "VIETNAM AIRLINES": "ຫວຽດນາມແອລາຍ", "CHINA EASTERN": "ໄຊນ່າອິສເທີນ", "SCOOT": "ສະກູດ"
+                }
             },
             zh: {
                 title: "出发 (DEPARTURES)",
                 headers: { time: "时间", flight: "Flight No.", logo: "标志", airline: "航空公司", dest: "目的地", gate: "登机口", status: "状态" },
                 status: { "ON TIME": "准点", "BOARDING": "登机中", "FINAL CALL": "最后呼叫", "DELAYED": "延误", "CANCELLED": "取消" },
-                places: { "VIENTIANE": "万象", "BANGKOK": "曼谷", "HANOI": "河内", "CHIANG MAI": "清迈", "SIEM REAP": "暹粒", "KUALA LUMPUR": "吉隆坡" },
-                airlines: { "LAO AIRLINES": "老挝航空", "THAI AIRWAYS": "泰国航空", "AIRASIA": "亚洲航空", "BANGKOK AIRWAYS": "曼谷航空" }
+                places: { 
+                    "VIENTIANE": "万象", "BANGKOK": "曼谷", "HANOI": "河内", 
+                    "CHIANG MAI": "清迈", "SIEM REAP": "暹粒", "KUNMING": "昆明" 
+                },
+                airlines: { 
+                    "LAO AIRLINES": "老挝航空", "AIRASIA": "亚洲航空", "THAI AIRASIA": "泰国亚洲航空",
+                    "BANGKOK AIRWAYS": "曼谷航空", "THAI AIRWAYS": "泰国航空", 
+                    "VIETNAM AIRLINES": "越南航空", "CHINA EASTERN": "中国东方航空", "SCOOT": "酷航"
+                }
             }
         };
 
@@ -182,7 +211,6 @@
             void tableElement.offsetWidth;
             tableElement.classList.add('fade-in');
 
-            // เปลี่ยนภาษา Headers (ยกเว้น Flight No. ที่เราฟิกซ์ค่าไว้ใน Dictionary แล้ว)
             document.getElementById('page-title').textContent = dict.title;
             document.getElementById('th-time').textContent = dict.headers.time;
             document.getElementById('th-flight').textContent = dict.headers.flight; 
@@ -197,15 +225,18 @@
 
             flightList.forEach(flight => {
                 const statusClass = `status-${flight.status.replace(' ', '-')}`;
+                const airlineKey = flight.airline.toUpperCase().trim();
+                const destKey = flight.destination.toUpperCase().trim();
                 
-                // ค้นหาคำแปล ถ้าไม่มีให้แสดงคำต้นฉบับ
+                // ค้นหาคำแปลด่วนตาม Dictionary 3 ภาษา
                 const translatedStatus = dict.status[flight.status] || flight.status;
-                const translatedDest = dict.places[flight.destination.toUpperCase()] || flight.destination;
-                const translatedAirline = dict.airlines[flight.airline.toUpperCase()] || flight.airline;
+                const translatedDest = dict.places[destKey] || flight.destination;
+                const translatedAirline = dict.airlines[airlineKey] || flight.airline;
                 
-                // ตรวจสอบโลโก้ ถ้าไม่ได้ใส่มาให้ซ่อนแท็กภาพ (onerror กันกรณีใส่ URL ผิด)
-                const logoHtml = flight.logoUrl 
-                    ? `<img src="${flight.logoUrl}" class="airline-logo" onerror="this.style.display='none'">` 
+                // ระบบตรวจหาโลโก้: ดึงจาก Object ด้านบนเป็นหลัก หรือดึงจาก URL สำรองใน Admin
+                const finalLogoUrl = autoAirlineLogos[airlineKey] || flight.logoUrl;
+                const logoHtml = finalLogoUrl 
+                    ? `<img src="${finalLogoUrl}" class="airline-logo" onerror="this.style.display='none'">` 
                     : `-`;
 
                 const row = `
@@ -236,12 +267,10 @@
             }
         });
 
-        // สลับภาษาทุกๆ 30 วินาที
         setInterval(() => {
             currentLangIndex = (currentLangIndex + 1) % languages.length;
             renderUI();
         }, 30000);
-
     </script>
 </body>
 </html>
