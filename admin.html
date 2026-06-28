@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FIDS Admin - Luang Prabang</title>
-    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600&display=swap" rel="stylesheet">
+    <title>FIDS Admin - Luang Prabang (With Edit)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         body {
             background-color: #1a1a1a;
@@ -30,6 +30,10 @@
             border: 1px solid #555;
             border-radius: 4px;
         }
+        .btn-container {
+            display: flex;
+            gap: 10px;
+        }
         button {
             background-color: #ffcc00;
             color: #000;
@@ -41,9 +45,18 @@
             border-radius: 4px;
             width: 100%;
             margin-top: 10px;
+            transition: background 0.2s;
         }
         button:hover { background-color: #e6b800; }
         
+        /* ปุ่มยกเลิกแก้ไข */
+        #cancelEditBtn {
+            background-color: #555;
+            color: #fff;
+            display: none; /* ซ่อนไว้ก่อน จะแสดงเมื่อกด Edit เท่านั้น */
+        }
+        #cancelEditBtn:hover { background-color: #444; }
+
         .flight-list { margin-top: 40px; }
         .flight-item {
             background: #2a2a2a;
@@ -54,6 +67,20 @@
             justify-content: space-between;
             align-items: center;
         }
+        .action-btns {
+            display: flex;
+            gap: 8px;
+        }
+        .edit-btn {
+            background-color: #007bff;
+            color: white;
+            width: auto;
+            padding: 8px 15px;
+            font-size: 1rem;
+            margin: 0;
+        }
+        .edit-btn:hover { background-color: #0056b3; }
+        
         .delete-btn {
             background-color: #ff3333;
             color: white;
@@ -62,11 +89,12 @@
             font-size: 1rem;
             margin: 0;
         }
+        .delete-btn:hover { background-color: #cc2424; }
     </style>
 </head>
 <body>
 
-    <h2>Control Panel - Flight Updates</h2>
+    <h2 id="form-title">Control Panel - Add New Flight</h2>
 
     <form id="addFlightForm">
         <div class="form-group">
@@ -99,7 +127,11 @@
                 <option value="CANCELLED">CANCELLED</option>
             </select>
         </div>
-        <button type="submit">SAVE FLIGHT</button>
+        
+        <div class="btn-container">
+            <button type="submit" id="submitBtn">SAVE FLIGHT</button>
+            <button type="button" id="cancelEditBtn">CANCEL EDIT</button>
+        </div>
     </form>
 
     <div class="flight-list">
@@ -109,7 +141,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
-        import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
+        import { getDatabase, ref, push, onValue, remove, update } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDMptdLpLEdbeVFKZj82M0gyoV2m_2y5Pk",
@@ -125,10 +157,29 @@
         const db = getDatabase(app);
         const flightsRef = ref(db, 'flights');
 
-        // บันทึกข้อมูล
-        document.getElementById('addFlightForm').addEventListener('submit', (e) => {
+        // ตัวแปรสำหรับเก็บ ID เที่ยวบินที่กำลังถูกแก้ไข (null แปลว่าอยู่ในโหมดเพิ่มใหม่)
+        let editFlightId = null; 
+        let cacheFlights = {}; // เก็บข้อมูลสำรองสำหรับดึงค่ามาใส่ฟอร์มตอนกดแก้ไข
+
+        const formTitle = document.getElementById('form-title');
+        const submitBtn = document.getElementById('submitBtn');
+        const cancelEditBtn = document.getElementById('cancelEditBtn');
+        const form = document.getElementById('addFlightForm');
+
+        // ฟังก์ชันล้างฟอร์มและรีเซ็ตสถานะกลับสู่โหมดเพิ่มข้อมูลปกติ
+        function resetFormMode() {
+            editFlightId = null;
+            form.reset();
+            formTitle.textContent = "Control Panel - Add New Flight";
+            submitBtn.textContent = "SAVE FLIGHT";
+            cancelEditBtn.style.display = "none";
+        }
+
+        // จัดการ Submit ฟอร์ม (ทั้งบันทึกใหม่ และ อัปเดตข้อมูลเก่า)
+        form.addEventListener('submit', (e) => {
             e.preventDefault();
-            const newFlight = {
+            
+            const flightData = {
                 time: document.getElementById('time').value,
                 flightNo: document.getElementById('flightNo').value.toUpperCase(),
                 airline: document.getElementById('airline').value,
@@ -136,18 +187,38 @@
                 gate: document.getElementById('gate').value,
                 status: document.getElementById('status').value
             };
-            push(flightsRef, newFlight);
-            e.target.reset(); // ล้างฟอร์ม
+
+            if (editFlightId) {
+                // โหมดแก้ไข: อัปเดตข้อมูลโดยระบุพิกัด ID เดิมลงใน Firebase
+                const specificFlightRef = ref(db, `flights/${editFlightId}`);
+                update(specificFlightRef, flightData)
+                    .then(() => resetFormMode())
+                    .catch(err => console.error("Error updating flight:", err));
+            } else {
+                // โหมดเพิ่มใหม่: ใช้ push สร้างกุญแจหลักแบบสุ่มอันใหม่
+                push(flightsRef, flightData)
+                    .then(() => resetFormMode())
+                    .catch(err => console.error("Error adding flight:", err));
+            }
         });
 
-        // แสดงและลบข้อมูล
+        // เหตุการณ์เมื่อกดปุ่มยกเลิกการแก้ไข
+        cancelEditBtn.addEventListener('click', resetFormMode);
+
+        // ดึงข้อมูลเรียลไทม์มาแสดงผลในตารางฝั่งผู้ดูแล
         onValue(flightsRef, (snapshot) => {
             const data = snapshot.val();
+            cacheFlights = data || {}; // อัปเดตแคชเพื่อใช้เวลาเลือกแก้ไข ข้อมูลจะได้แม่นยำ
+            
             const listContainer = document.getElementById('admin-flight-data');
             listContainer.innerHTML = '';
 
             if (data) {
-                Object.entries(data).forEach(([key, flight]) => {
+                // แปลง object เรียงตามเวลาเพื่อแสดงผลให้ผู้ดูแลตรวจสอบง่ายขึ้น
+                const sortedFlights = Object.entries(data).map(([key, val]) => ({ id: key, ...val }));
+                sortedFlights.sort((a, b) => a.time.localeCompare(b.time));
+
+                sortedFlights.forEach(flight => {
                     const item = document.createElement('div');
                     item.className = 'flight-item';
                     item.innerHTML = `
@@ -155,16 +226,50 @@
                             <strong>${flight.time} - ${flight.flightNo}</strong><br>
                             ${flight.destination} (Gate: ${flight.gate}) - <span style="color:#ffcc00">${flight.status}</span>
                         </div>
-                        <button class="delete-btn" data-id="${key}">Remove</button>
+                        <div class="action-btns">
+                            <button class="edit-btn" data-id="${flight.id}">Edit</button>
+                            <button class="delete-btn" data-id="${flight.id}">Remove</button>
+                        </div>
                     `;
                     listContainer.appendChild(item);
                 });
 
-                // ผูก Event ให้ปุ่มลบ
+                // จัดการคลิกปุ่ม Edit
+                document.querySelectorAll('.edit-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const id = e.target.getAttribute('data-id');
+                        const flight = cacheFlights[id];
+                        
+                        if (flight) {
+                            // นำข้อมูลยัดใส่ Input ของ Form
+                            editFlightId = id;
+                            document.getElementById('time').value = flight.time;
+                            document.getElementById('flightNo').value = flight.flightNo;
+                            document.getElementById('airline').value = flight.airline;
+                            document.getElementById('destination').value = flight.destination;
+                            document.getElementById('gate').value = flight.gate;
+                            document.getElementById('status').value = flight.status;
+
+                            // เปลี่ยนแปลงหน้าตา UI ของฟอร์มเข้าสู่โหมดแก้ไข
+                            formTitle.textContent = `Control Panel - Editing Flight [${flight.flightNo}]`;
+                            submitBtn.textContent = "UPDATE FLIGHT";
+                            cancelEditBtn.style.display = "block";
+                            
+                            // เลื่อนหน้าจอกลับขึ้นไปด้านบนเพื่อให้กรอกข้อมูลสะดวก
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }
+                    });
+                });
+
+                // จัดการคลิกปุ่ม Remove (ลบเที่ยวบิน)
                 document.querySelectorAll('.delete-btn').forEach(btn => {
                     btn.addEventListener('click', (e) => {
                         const id = e.target.getAttribute('data-id');
-                        remove(ref(db, `flights/${id}`));
+                        if (confirm("Are you sure you want to delete this flight?")) {
+                            remove(ref(db, `flights/${id}`));
+                            // ถ้าข้อมูลที่กำลังแก้โดนลบไปพอดี ให้ล้างหน้าฟอร์มด้วย
+                            if (editFlightId === id) resetFormMode();
+                        }
                     });
                 });
             }
