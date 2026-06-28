@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Luang Prabang International Airport - Departures</title>
-    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- เพิ่ม Font รองรับภาษาอังกฤษ, ลาว และจีน -->
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=Noto+Sans+Lao:wght@400;600&family=Noto+Sans+SC:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg-color: #0a0a0a;
@@ -18,10 +19,11 @@
         body {
             background-color: var(--bg-color);
             color: var(--text-main);
-            font-family: 'Chakra Petch', sans-serif;
+            /* ตั้งค่า Fallback ฟอนต์ให้รองรับทุุกภาษา */
+            font-family: 'Chakra Petch', 'Noto Sans Lao', 'Noto Sans SC', sans-serif;
             margin: 0;
             padding: 20px;
-            overflow: hidden; /* ป้องกัน scrollbar บนจอทีวี */
+            overflow: hidden; 
         }
         .header {
             display: flex;
@@ -36,6 +38,7 @@
             font-size: 3.5rem;
             text-transform: uppercase;
             letter-spacing: 2px;
+            transition: opacity 0.5s ease;
         }
         .header .time {
             font-size: 3.5rem;
@@ -72,32 +75,43 @@
         .status-DELAYED { color: var(--status-delayed); }
         .status-BOARDING { color: var(--status-boarding); animation: blink 1.5s infinite; }
         .status-FINAL-CALL { color: var(--status-delayed); animation: blink 1s infinite; }
+        .status-CANCELLED { color: var(--text-muted); text-decoration: line-through; }
 
         @keyframes blink {
             50% { opacity: 0; }
+        }
+
+        /* สำหรับ Animation ตอนเปลี่ยนภาษา */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            0% { opacity: 0; transform: translateY(-5px); }
+            100% { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h1>Departures / ຂາອອກ</h1>
+        <h1 id="page-title">DEPARTURES</h1>
         <div class="time" id="clock">00:00</div>
     </div>
 
-    <table>
+    <table id="fids-table" class="fade-in">
         <thead>
             <tr>
-                <th class="time-col">Time</th>
-                <th class="flight-col">Flight</th>
-                <th class="airline-col">Airline</th>
-                <th class="dest-col">Destination</th>
-                <th class="gate-col">Gate</th>
-                <th class="status-col">Status</th>
+                <th class="time-col" id="th-time">Time</th>
+                <th class="flight-col" id="th-flight">Flight</th>
+                <th class="airline-col" id="th-airline">Airline</th>
+                <th class="dest-col" id="th-dest">Destination</th>
+                <th class="gate-col" id="th-gate">Gate</th>
+                <th class="status-col" id="th-status">Status</th>
             </tr>
         </thead>
         <tbody id="flight-data">
-            </tbody>
+            <!-- ข้อมูลจะถูก render ที่นี่ผ่าน JS -->
+        </tbody>
     </table>
 
     <script type="module">
@@ -117,7 +131,30 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // อัปเดตนาฬิกา
+        // --- ระบบสลับภาษา (Language Translation Setup) ---
+        const dictionary = {
+            en: {
+                title: "DEPARTURES",
+                headers: { time: "Time", flight: "Flight", airline: "Airline", dest: "Destination", gate: "Gate", status: "Status" },
+                status: { "ON TIME": "ON TIME", "BOARDING": "BOARDING", "FINAL CALL": "FINAL CALL", "DELAYED": "DELAYED", "CANCELLED": "CANCELLED" }
+            },
+            lo: {
+                title: "ຂາອອກ (DEPARTURES)",
+                headers: { time: "ເວລາ", flight: "ຖ້ຽວບິນ", airline: "ສາຍການບິນ", dest: "ປາຍທາງ", gate: "ປະຕູອອກ", status: "ສະຖານະ" },
+                status: { "ON TIME": "ກົງເວລາ", "BOARDING": "ກຳລັງຂຶ້ນເຄື່ອງ", "FINAL CALL": "ເອີ້ນຂຶ້ນເຄື່ອງຄັ້ງສຸດທ້າຍ", "DELAYED": "ຊັກຊ້າ", "CANCELLED": "ຍົກເລີກ" }
+            },
+            zh: {
+                title: "出发 (DEPARTURES)",
+                headers: { time: "时间", flight: "航班号", airline: "航空公司", dest: "目的地", gate: "登机口", status: "状态" },
+                status: { "ON TIME": "准点", "BOARDING": "登机中", "FINAL CALL": "最后呼叫", "DELAYED": "延误", "CANCELLED": "取消" }
+            }
+        };
+
+        const languages = ['en', 'lo', 'zh'];
+        let currentLangIndex = 0;
+        let flightList = []; // เก็บข้อมูลเที่ยวบินแบบ Local เพื่อให้ไม่ต้องดึงจาก Firebase ใหม่ทุก 30 วิ
+
+        // ฟังก์ชันอัปเดตนาฬิกา
         function updateClock() {
             const now = new Date();
             document.getElementById('clock').textContent = now.toLocaleTimeString('en-US', { hour12: false }).substring(0, 5);
@@ -125,34 +162,70 @@
         setInterval(updateClock, 1000);
         updateClock();
 
-        // ดึงข้อมูลเที่ยวบิน
-        const flightsRef = ref(db, 'flights');
-        onValue(flightsRef, (snapshot) => {
-            const data = snapshot.val();
+        // ฟังก์ชัน Render ข้อมูลลงตารางตามภาษาปัจจุบัน
+        function renderUI() {
+            const lang = languages[currentLangIndex];
+            const dict = dictionary[lang];
+
+            // Trigger Animation เล็กน้อยเพื่อให้รู้ว่ามีการเปลี่ยนภาษา
+            const tableElement = document.getElementById('fids-table');
+            tableElement.classList.remove('fade-in');
+            void tableElement.offsetWidth; // Trigger reflow
+            tableElement.classList.add('fade-in');
+
+            // เปลี่ยนภาษา Headers
+            document.getElementById('page-title').textContent = dict.title;
+            document.getElementById('th-time').textContent = dict.headers.time;
+            document.getElementById('th-flight').textContent = dict.headers.flight;
+            document.getElementById('th-airline').textContent = dict.headers.airline;
+            document.getElementById('th-dest').textContent = dict.headers.dest;
+            document.getElementById('th-gate').textContent = dict.headers.gate;
+            document.getElementById('th-status').textContent = dict.headers.status;
+
+            // Render เที่ยวบิน
             const tbody = document.getElementById('flight-data');
             tbody.innerHTML = '';
 
-            if (data) {
-                // แปลง object เป็น array และจัดเรียงตามเวลา
-                const flights = Object.entries(data).map(([key, val]) => ({ id: key, ...val }));
-                flights.sort((a, b) => a.time.localeCompare(b.time));
+            flightList.forEach(flight => {
+                const statusClass = `status-${flight.status.replace(' ', '-')}`;
+                // ดึงคำแปลสถานะ ถ้าไม่มีใน Dict ให้ใช้คำต้นฉบับ
+                const translatedStatus = dict.status[flight.status] || flight.status; 
+                
+                const row = `
+                    <tr>
+                        <td class="time-col">${flight.time}</td>
+                        <td class="flight-col">${flight.flightNo}</td>
+                        <td class="airline-col">${flight.airline}</td>
+                        <td class="dest-col">${flight.destination}</td>
+                        <td class="gate-col">${flight.gate}</td>
+                        <td class="status-col ${statusClass}">${translatedStatus}</td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        }
 
-                flights.forEach(flight => {
-                    const statusClass = `status-${flight.status.replace(' ', '-')}`;
-                    const row = `
-                        <tr>
-                            <td class="time-col">${flight.time}</td>
-                            <td class="flight-col">${flight.flightNo}</td>
-                            <td class="airline-col">${flight.airline}</td>
-                            <td class="dest-col">${flight.destination}</td>
-                            <td class="gate-col">${flight.gate}</td>
-                            <td class="status-col ${statusClass}">${flight.status}</td>
-                        </tr>
-                    `;
-                    tbody.innerHTML += row;
-                });
+        // ดึงข้อมูลเที่ยวบินจาก Firebase (อัปเดตอัตโนมัติเมื่อฝั่ง Admin แก้ไข)
+        const flightsRef = ref(db, 'flights');
+        onValue(flightsRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                // เก็บลง Global Variable ทันทีเมื่อ Firebase อัปเดต
+                flightList = Object.entries(data).map(([key, val]) => ({ id: key, ...val }));
+                flightList.sort((a, b) => a.time.localeCompare(b.time));
+                renderUI(); // รีเฟรชหน้าจอทันทีที่มีการอัปเดตข้อมูล
+            } else {
+                flightList = [];
+                document.getElementById('flight-data').innerHTML = '';
             }
         });
+
+        // Loop สลับภาษาทุกๆ 30 วินาที (30000 ms)
+        setInterval(() => {
+            currentLangIndex = (currentLangIndex + 1) % languages.length;
+            renderUI();
+        }, 30000);
+
     </script>
 </body>
 </html>
