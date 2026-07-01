@@ -1,15 +1,15 @@
 <!DOCTYPE html>
-<html lang="lo">
+<html lang="th">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FIDS Admin - Luang Prabang (Lao Default)</title>
-    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=Noto+Sans+Lao:wght@400;600&display=swap" rel="stylesheet">
+    <title>FIDS Admin - Khon Kaen Airport</title>
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         body {
             background-color: #1a1a1a;
             color: #ffffff;
-            font-family: 'Noto Sans Lao', 'Chakra Petch', sans-serif;
+            font-family: 'Chakra Petch', sans-serif;
             padding: 20px;
             max-width: 800px;
             margin: 0 auto;
@@ -24,21 +24,29 @@
         input, select {
             padding: 12px;
             font-size: 1.2rem;
-            font-family: 'Noto Sans Lao', 'Chakra Petch', sans-serif;
+            font-family: 'Chakra Petch', sans-serif;
             background: #333;
             color: white;
             border: 1px solid #555;
             border-radius: 4px;
         }
-        .btn-container { display: flex; gap: 10px; }
+        .btn-container { display: flex; gap: 10px; flex-wrap: wrap; }
         button {
-            background-color: #ffcc00; color: #000; font-size: 1.5rem;
+            background-color: #ffcc00; color: #000; font-size: 1.2rem;
             font-weight: bold; padding: 15px; border: none; cursor: pointer;
-            border-radius: 4px; width: 100%; margin-top: 10px; transition: background 0.2s;
+            border-radius: 4px; flex-grow: 1; margin-top: 10px; transition: background 0.2s;
         }
         button:hover { background-color: #e6b800; }
+        
         #cancelEditBtn { background-color: #555; color: #fff; display: none; }
         #cancelEditBtn:hover { background-color: #444; }
+        
+        /* ปุ่มพิเศษสำหรับโหลดข้อมูลเริ่มต้น */
+        #loadTemplateBtn {
+            background-color: #00cc66; color: white; width: 100%;
+            margin-bottom: 30px; font-size: 1.4rem;
+        }
+        #loadTemplateBtn:hover { background-color: #00b359; }
 
         .flight-list { margin-top: 40px; }
         .flight-item {
@@ -46,66 +54,68 @@
             border-radius: 4px; display: flex; justify-content: space-between; align-items: center;
         }
         .action-btns { display: flex; gap: 8px; }
-        .edit-btn { background-color: #007bff; color: white; width: auto; padding: 8px 15px; font-size: 1rem; margin: 0; }
+        .edit-btn { background-color: #007bff; color: white; padding: 8px 15px; font-size: 1rem; }
         .edit-btn:hover { background-color: #0056b3; }
-        .delete-btn { background-color: #ff3333; color: white; width: auto; padding: 8px 15px; font-size: 1rem; margin: 0; }
+        .delete-btn { background-color: #ff3333; color: white; padding: 8px 15px; font-size: 1rem; }
         .delete-btn:hover { background-color: #cc2424; }
     </style>
 </head>
 <body>
 
-    <h2 id="form-title">ແຜງຄວບຄຸມ - ເພີ່ມຖ້ຽວບິນໃໝ່</h2>
+    <button id="loadTemplateBtn">📥 โหลดตารางเที่ยวบินขอนแก่นอัตโนมัติ (ขาออก ก.ค. 2026)</button>
+
+    <h2 id="form-title">แผงควบคุม - เพิ่มเที่ยวบินใหม่</h2>
 
     <form id="addFlightForm">
         <div class="form-group">
-            <label>ເວລາ (Time - HH:MM)</label>
+            <label>เวลา (Time - HH:MM)</label>
             <input type="time" id="time" required>
         </div>
         <div class="form-group">
-            <label>Flight No. (ເຊັ່ນ: QV101)</label>
+            <label>Flight No. (เช่น: TG041)</label>
             <input type="text" id="flightNo" required>
         </div>
         <div class="form-group">
-            <label>ສາຍການບິນ (Airline - ເຊັ່ນ: ການບິນລາວ, ແອເອເຊຍ)</label>
-            <input type="text" id="airline" placeholder="ປ້ອນສາຍການບິນເປັນພາສາລາວ" required>
+            <label>สายการบิน (เช่น: การบินไทย, ไทยแอร์เอเชีย)</label>
+            <input type="text" id="airline" placeholder="ป้อนชื่อสายการบินภาษาไทย" required>
         </div>
         <div class="form-group">
-            <label>ໂລໂກ້ URL ສາຍການບิน (Airline Logo URL - ຖ້າມີ)</label>
+            <label>โลโก้ URL (ไม่บังคับ ระบบจะดึงอัตโนมัติถ้าพิมพ์ชื่อถูก)</label>
             <input type="url" id="logoUrl" placeholder="https://example.com/logo.png">
         </div>
         <div class="form-group">
-            <label>ປາຍທາງ (Destination - ເຊັ່ນ: ວຽງຈັນ, ບາງກອກ, ຮ່າໂນ້ຍ)</label>
-            <input type="text" id="destination" placeholder="ປ້ອນປາຍທາງເປັນພາສາລາວ" required>
+            <label>ปลายทาง (เช่น: สุวรรณภูมิ, ดอนเมือง, เชียงใหม่)</label>
+            <input type="text" id="destination" placeholder="ป้อนปลายทางภาษาไทย" required>
         </div>
         <div class="form-group">
-            <label>ປະຕູອອກ (Gate)</label>
-            <input type="text" id="gate" required>
+            <label>ทางออก (Gate)</label>
+            <input type="text" id="gate">
         </div>
         <div class="form-group">
-            <label>ສະຖານະ (Status)</label>
+            <label>สถานะ (Status)</label>
             <select id="status">
-                <option value="ກົງເວລາ">ກົງເວລາ (ON TIME)</option>
-                <option value="ກຳລັງຂຶ້ນເຄື່ອງ">ກຳລັງຂຶ້ນເຄື່ອງ (BOARDING)</option>
-                <option value="ເອີ້ນຂຶ້ນເຄື່ອງຄັ້ງສຸດທ້າຍ">ເອີ້ນຂຶ້ນເຄື່ອງຄັ້ງສຸດທ້າຍ (FINAL CALL)</option>
-                <option value="ຊັກຊ້າ">ຊັກຊ້າ (DELAYED)</option>
-                <option value="ຍົກເລີກ">ຍົກເລີກ (CANCELLED)</option>
+                <option value="ตรงเวลา">ตรงเวลา (ON TIME)</option>
+                <option value="กำลังขึ้นเครื่อง">กำลังขึ้นเครื่อง (BOARDING)</option>
+                <option value="เรียกขึ้นเครื่องครั้งสุดท้าย">เรียกขึ้นเครื่องครั้งสุดท้าย (FINAL CALL)</option>
+                <option value="ล่าช้า">ล่าช้า (DELAYED)</option>
+                <option value="ยกเลิก">ยกเลิก (CANCELLED)</option>
             </select>
         </div>
         
         <div class="btn-container">
-            <button type="submit" id="submitBtn">ບັນທຶກຖ້ຽວບິນ</button>
-            <button type="button" id="cancelEditBtn">ຍົກເລີກການແກ້ໄຂ</button>
+            <button type="submit" id="submitBtn">บันทึกเที่ยวบิน</button>
+            <button type="button" id="cancelEditBtn">ยกเลิกการแก้ไข</button>
         </div>
     </form>
 
     <div class="flight-list">
-        <h2>ຖ້ຽວບິນທີ່ກຳລັງປະຕິບັດການ (Active Flights)</h2>
+        <h2>เที่ยวบินที่กำลังปฏิบัติการ (Active Flights)</h2>
         <div id="admin-flight-data"></div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
-        import { getDatabase, ref, push, onValue, remove, update } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
+        import { getDatabase, ref, push, set, onValue, remove, update } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDMptdLpLEdbeVFKZj82M0gyoV2m_2y5Pk",
@@ -132,14 +142,14 @@
         function resetFormMode() {
             editFlightId = null;
             form.reset();
-            formTitle.textContent = "ແຜງຄວບຄຸມ - ເພີ່ມຖ້ຽວບິນໃໝ່";
-            submitBtn.textContent = "ບັນທຶກຖ້ຽວບິນ";
+            formTitle.textContent = "แผงควบคุม - เพิ่มเที่ยวบินใหม่";
+            submitBtn.textContent = "บันทึกเที่ยวบิน";
             cancelEditBtn.style.display = "none";
         }
 
+        // จัดการ Form Submit (เพิ่ม/แก้ไข)
         form.addEventListener('submit', (e) => {
             e.preventDefault();
-            
             const flightData = {
                 time: document.getElementById('time').value,
                 flightNo: document.getElementById('flightNo').value.toUpperCase(),
@@ -151,20 +161,18 @@
             };
 
             if (editFlightId) {
-                update(ref(db, `flights/${editFlightId}`), flightData)
-                    .then(() => resetFormMode());
+                update(ref(db, `flights/${editFlightId}`), flightData).then(() => resetFormMode());
             } else {
-                push(flightsRef, flightData)
-                    .then(() => resetFormMode());
+                push(flightsRef, flightData).then(() => resetFormMode());
             }
         });
 
         cancelEditBtn.addEventListener('click', resetFormMode);
 
+        // ดึงข้อมูลแสดงผลใน Admin
         onValue(flightsRef, (snapshot) => {
             const data = snapshot.val();
             cacheFlights = data || {}; 
-            
             const listContainer = document.getElementById('admin-flight-data');
             listContainer.innerHTML = '';
 
@@ -178,21 +186,21 @@
                     item.innerHTML = `
                         <div>
                             <strong>${flight.time} - ${flight.flightNo}</strong> (${flight.airline})<br>
-                            ${flight.destination} (Gate: ${flight.gate}) - <span style="color:#ffcc00">${flight.status}</span>
+                            ไปยัง: ${flight.destination} | Gate: ${flight.gate || '-'} | <span style="color:#ffcc00">${flight.status}</span>
                         </div>
                         <div class="action-btns">
-                            <button class="edit-btn" data-id="${flight.id}">ແກ้ໄຂ</button>
-                            <button class="delete-btn" data-id="${flight.id}">ລຶບ</button>
+                            <button class="edit-btn" data-id="${flight.id}">แก้ไข</button>
+                            <button class="delete-btn" data-id="${flight.id}">ลบ</button>
                         </div>
                     `;
                     listContainer.appendChild(item);
                 });
 
+                // ปุ่มแก้ไข
                 document.querySelectorAll('.edit-btn').forEach(btn => {
                     btn.addEventListener('click', (e) => {
                         const id = e.target.getAttribute('data-id');
                         const flight = cacheFlights[id];
-                        
                         if (flight) {
                             editFlightId = id;
                             document.getElementById('time').value = flight.time;
@@ -200,25 +208,60 @@
                             document.getElementById('airline').value = flight.airline;
                             document.getElementById('logoUrl').value = flight.logoUrl || "";
                             document.getElementById('destination').value = flight.destination;
-                            document.getElementById('gate').value = flight.gate;
+                            document.getElementById('gate').value = flight.gate || "";
                             document.getElementById('status').value = flight.status;
 
-                            formTitle.textContent = `ແຜງຄວບຄຸມ - ກຳລັງແກ້ໄຂ [${flight.flightNo}]`;
-                            submitBtn.textContent = "ອັບເດດຖ້ຽວບິນ";
+                            formTitle.textContent = `แผงควบคุม - กำลังแก้ไข [${flight.flightNo}]`;
+                            submitBtn.textContent = "อัปเดตเที่ยวบิน";
                             cancelEditBtn.style.display = "block";
                             window.scrollTo({ top: 0, behavior: 'smooth' });
                         }
                     });
                 });
 
+                // ปุ่มลบ
                 document.querySelectorAll('.delete-btn').forEach(btn => {
                     btn.addEventListener('click', (e) => {
                         const id = e.target.getAttribute('data-id');
-                        if (confirm("ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການລຶບຖ້ຽວບິນນີ້?")) {
+                        if (confirm("คุณแน่ใจหรือไม่ว่าต้องการลบเที่ยวบินนี้?")) {
                             remove(ref(db, `flights/${id}`));
                             if (editFlightId === id) resetFormMode();
                         }
                     });
+                });
+            }
+        });
+
+        // --- ชุดข้อมูลเที่ยวบินขาออกขอนแก่น กรกฎาคม 2026 ---
+        const kkDepartures = [
+            { time: "08:30", flightNo: "TG041", airline: "การบินไทย", destination: "สุวรรณภูมิ", gate: "1", status: "ตรงเวลา", logoUrl: "" },
+            { time: "08:35", flightNo: "FD3251", airline: "ไทยแอร์เอเชีย", destination: "ดอนเมือง", gate: "2", status: "ตรงเวลา", logoUrl: "" },
+            { time: "08:40", flightNo: "VZ211", airline: "ไทยเวียตเจ็ท", destination: "สุวรรณภูมิ", gate: "3", status: "ตรงเวลา", logoUrl: "" },
+            { time: "09:50", flightNo: "SL643", airline: "ไทยไลอ้อนแอร์", destination: "ดอนเมือง", gate: "1", status: "ตรงเวลา", logoUrl: "" },
+            { time: "10:05", flightNo: "FD3249", airline: "ไทยแอร์เอเชีย", destination: "ดอนเมือง", gate: "2", status: "ตรงเวลา", logoUrl: "" },
+            { time: "11:50", flightNo: "FD3255", airline: "ไทยแอร์เอเชีย", destination: "ดอนเมือง", gate: "3", status: "ตรงเวลา", logoUrl: "" },
+            { time: "12:05", flightNo: "TG043", airline: "การบินไทย", destination: "สุวรรณภูมิ", gate: "1", status: "ตรงเวลา", logoUrl: "" },
+            { time: "12:45", flightNo: "SL645", airline: "ไทยไลอ้อนแอร์", destination: "ดอนเมือง", gate: "2", status: "ตรงเวลา", logoUrl: "" },
+            { time: "15:40", flightNo: "TG045", airline: "การบินไทย", destination: "สุวรรณภูมิ", gate: "3", status: "ตรงเวลา", logoUrl: "" },
+            { time: "16:10", flightNo: "FD3261", airline: "ไทยแอร์เอเชีย", destination: "ดอนเมือง", gate: "1", status: "ตรงเวลา", logoUrl: "" },
+            { time: "17:30", flightNo: "SL647", airline: "ไทยไลอ้อนแอร์", destination: "ดอนเมือง", gate: "2", status: "ตรงเวลา", logoUrl: "" },
+            { time: "18:35", flightNo: "FD3257", airline: "ไทยแอร์เอเชีย", destination: "ดอนเมือง", gate: "3", status: "ตรงเวลา", logoUrl: "" },
+            { time: "19:05", flightNo: "TG047", airline: "การบินไทย", destination: "สุวรรณภูมิ", gate: "1", status: "ตรงเวลา", logoUrl: "" },
+            { time: "19:30", flightNo: "VZ215", airline: "ไทยเวียตเจ็ท", destination: "สุวรรณภูมิ", gate: "2", status: "ตรงเวลา", logoUrl: "" },
+            { time: "20:10", flightNo: "SL649", airline: "ไทยไลอ้อนแอร์", destination: "ดอนเมือง", gate: "3", status: "ตรงเวลา", logoUrl: "" },
+            { time: "20:30", flightNo: "FD3259", airline: "ไทยแอร์เอเชีย", destination: "ดอนเมือง", gate: "1", status: "ตรงเวลา", logoUrl: "" },
+            { time: "21:00", flightNo: "FD5501", airline: "ไทยแอร์เอเชีย", destination: "เชียงใหม่", gate: "2", status: "ตรงเวลา", logoUrl: "" }
+        ];
+
+        // ปุ่มอัปโหลดข้อมูลเข้า Firebase
+        document.getElementById('loadTemplateBtn').addEventListener('click', () => {
+            if (confirm("การทำงานนี้จะลบข้อมูลปัจจุบันทั้งหมดและแทนที่ด้วยตารางเที่ยวบินขอนแก่น (ก.ค. 2026) ยืนยันหรือไม่?")) {
+                // ล้างข้อมูลเก่าและแทนที่ด้วยข้อมูลใหม่แบบก้อนเดียว
+                set(flightsRef, kkDepartures).then(() => {
+                    alert("✅ โหลดข้อมูลตารางเที่ยวบินขอนแก่นทั้ง 17 เที่ยวบินสำเร็จ!");
+                }).catch((error) => {
+                    console.error(error);
+                    alert("❌ เกิดข้อผิดพลาดในการโหลดข้อมูล");
                 });
             }
         });
