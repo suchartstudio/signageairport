@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="lo">
+<html lang="th">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Luang Prabang International Airport - Departures</title>
-    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=Noto+Sans+Lao:wght@400;600;700&family=Noto+Sans+SC:wght@400;600;700&display=swap" rel="stylesheet">
+    <title>Khon Kaen Airport - Departures</title>
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=Noto+Sans+SC:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg-color: #0a0a0a;
@@ -18,7 +18,7 @@
         body {
             background-color: var(--bg-color);
             color: var(--text-main);
-            font-family: 'Noto Sans Lao', 'Chakra Petch', 'Noto Sans SC', sans-serif;
+            font-family: 'Chakra Petch', 'Noto Sans SC', sans-serif;
             margin: 0;
             padding: 20px;
             overflow: hidden; 
@@ -34,6 +34,7 @@
         .header h1 {
             margin: 0;
             font-size: 3.5rem;
+            font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 1px;
         }
@@ -61,11 +62,11 @@
             vertical-align: middle;
         }
         .time-col { color: var(--accent-yellow); width: 10%; }
-        .flight-col { width: 12%; color: #fff; font-family: 'Chakra Petch', sans-serif; }
+        .flight-col { width: 12%; color: #fff; }
         .logo-col { width: 8%; text-align: center; }
         .airline-col { width: 18%; }
         .dest-col { width: 22%; }
-        .gate-col { width: 10%; text-align: center; font-family: 'Chakra Petch', sans-serif; }
+        .gate-col { width: 10%; text-align: center; }
         .status-col { width: 20%; text-align: right; }
         
         .airline-logo {
@@ -79,7 +80,6 @@
             margin: 0 auto;
         }
 
-        /* การจัดการสีสถานะตาม Key ภาษาลาว */
         .status-ON-TIME { color: var(--status-ontime); }
         .status-DELAYED { color: var(--status-delayed); }
         .status-BOARDING { color: var(--status-boarding); animation: blink 1.5s infinite; }
@@ -97,20 +97,20 @@
 <body>
 
     <div class="header">
-        <h1 id="page-title">ຂາອອກ (DEPARTURES)</h1>
+        <h1 id="page-title">ขาออก (DEPARTURES)</h1>
         <div class="time" id="clock">00:00</div>
     </div>
 
     <table id="fids-table" class="fade-in">
         <thead>
             <tr>
-                <th class="time-col" id="th-time">ເວລາ</th>
+                <th class="time-col" id="th-time">เวลา</th>
                 <th class="flight-col" id="th-flight">Flight No.</th>
-                <th class="logo-col" id="th-logo">ໂລໂກ້</th>
-                <th class="airline-col" id="th-airline">ສາຍການບິນ</th>
-                <th class="dest-col" id="th-dest">ປາຍທາງ</th>
-                <th class="gate-col" id="th-gate">ປະຕູອອກ</th>
-                <th class="status-col" id="th-status">ສະຖານະ</th>
+                <th class="logo-col" id="th-logo">โลโก้</th>
+                <th class="airline-col" id="th-airline">สายการบิน</th>
+                <th class="dest-col" id="th-dest">ปลายทาง</th>
+                <th class="gate-col" id="th-gate">ทางออก</th>
+                <th class="status-col" id="th-status">สถานะ</th>
             </tr>
         </thead>
         <tbody id="flight-data"></tbody>
@@ -133,54 +133,49 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // จับคู่โลโก้จากชื่อสายการบินภาษาลาวอัตโนมัติ
+        // จับคู่โลโก้จากชื่อสายการบิน (อิงข้อมูลสนามบินขอนแก่น)
         const autoAirlineLogos = {
-            "ການບິນລາວ": "https://upload.wikimedia.org/wikipedia/commons/2/20/Lao_Airlines_logo.svg",
-            "ແອເອເຊຍ": "https://upload.wikimedia.org/wikipedia/commons/f/f5/AirAsia_New_Logo.svg",
-            "ໄທແອເອເຊຍ": "https://upload.wikimedia.org/wikipedia/commons/f/f5/AirAsia_New_Logo.svg",
-            "ບາງກອກແອເວ": "https://upload.wikimedia.org/wikipedia/commons/e/e0/Bangkok_Airways_logo.svg",
-            "ການບິນໄທ": "https://upload.wikimedia.org/wikipedia/commons/c/c6/Thai_Airways_International_logo.svg",
-            "ຫວຽດນາມແອລາຍ": "https://upload.wikimedia.org/wikipedia/commons/d/d7/Vietnam_Airlines_logo_2015.svg",
-            "ໄຊນ່າອິສເທີນ": "https://upload.wikimedia.org/wikipedia/commons/a/aa/China_Eastern_Airlines_logo.svg",
-            "ສະກູດ": "https://upload.wikimedia.org/wikipedia/commons/4/42/Scoot_Logo.svg"
+            "การบินไทย": "https://upload.wikimedia.org/wikipedia/commons/c/c6/Thai_Airways_International_logo.svg",
+            "ไทยแอร์เอเชีย": "https://upload.wikimedia.org/wikipedia/commons/f/f5/AirAsia_New_Logo.svg",
+            "ไทยเวียตเจ็ท": "https://upload.wikimedia.org/wikipedia/commons/5/5e/VietJet_Air_logo.svg",
+            "ไทยไลอ้อนแอร์": "https://upload.wikimedia.org/wikipedia/commons/4/44/Lion_Air_logo.svg"
         };
 
-        // จับคู่สไตล์ CSS ตามสถานะภาษาลาว
+        // สไตล์สถานะ
         const statusStyleMap = {
-            "ກົງເວລາ": "status-ON-TIME",
-            "ກຳລັງຂຶ້ນເຄື່ອງ": "status-BOARDING",
-            "ເອີ້ນຂຶ້ນເຄື່ອງຄັ້ງສຸດທ້າຍ": "status-FINAL-CALL",
-            "ຊັກຊ້າ": "status-DELAYED",
-            "ຍົກເລີກ": "status-CANCELLED"
+            "ตรงเวลา": "status-ON-TIME",
+            "กำลังขึ้นเครื่อง": "status-BOARDING",
+            "เรียกขึ้นเครื่องครั้งสุดท้าย": "status-FINAL-CALL",
+            "ล่าช้า": "status-DELAYED",
+            "ยกเลิก": "status-CANCELLED"
         };
 
-        // --- พจนานุกรมการแปลอัตโนมัติ โดยอ้างอิงคีย์หลักเป็นภาษาลาว ---
+        // พจนานุกรมแปลอัตโนมัติ โดยอ้างอิงคีย์หลักเป็น "ภาษาไทย"
         const dictionary = {
-            lo: {
-                title: "ຂາອອກ (DEPARTURES)",
-                headers: { time: "ເວລາ", flight: "Flight No.", logo: "ໂລໂກ້", airline: "ສາຍການບິນ", dest: "ປາຍທາງ", gate: "ປະຕູອອກ", status: "ສະຖານະ" },
-                status: { "ກົງເວລາ": "ກົງເວລາ", "ກຳລັງຂຶ້ນເຄື່ອງ": "ກຳລັງຂຶ້ນເຄື່ອງ", "ເອີ້ນຂຶ້ນເຄື່ອງຄັ້ງສຸດທ້າຍ": "ເອີ້ນຂຶ້ນເຄື່ອງຄັ້ງສຸດທ້າຍ", "ຊັກຊ້າ": "ຊັກຊ້າ", "ຍົກເລີກ": "ຍົກເລີກ" },
-                places: { "ວຽງຈັນ": "ວຽງຈັນ", "ບາງກອກ": "ບາງກອກ", "ຮ່າໂນ້ຍ": "ຮ່າໂນ້ຍ", "ຊຽງໃໝ່": "ຊຽງໃໝ່", "ສຽມຣຽບ": "ສຽມຣຽບ", "ຄຸນໝິງ": "ຄຸນໝິງ" },
-                airlines: { "CN": "ການບິນລາว", "AA": "ແອເອເຊຍ", "TA": "ໄທແອເອເຊຍ", "PG": "ບາງກອກແອເວ", "TG": "ການບິນໄທ", "VN": "ຫວຽດນາມແອລາຍ", "MU": "ໄຊນ່າອິສເທີນ", "TR": "ສະກູດ" }
+            th: {
+                title: "ขาออก (DEPARTURES)",
+                headers: { time: "เวลา", flight: "Flight No.", logo: "โลโก้", airline: "สายการบิน", dest: "ปลายทาง", gate: "ทางออก", status: "สถานะ" },
+                status: { "ตรงเวลา": "ตรงเวลา", "กำลังขึ้นเครื่อง": "กำลังขึ้นเครื่อง", "เรียกขึ้นเครื่องครั้งสุดท้าย": "เรียกขึ้นเครื่องครั้งสุดท้าย", "ล่าช้า": "ล่าช้า", "ยกเลิก": "ยกเลิก" },
+                places: { "สุวรรณภูมิ": "สุวรรณภูมิ", "ดอนเมือง": "ดอนเมือง", "เชียงใหม่": "เชียงใหม่" },
+                airlines: { "การบินไทย": "การบินไทย", "ไทยแอร์เอเชีย": "ไทยแอร์เอเชีย", "ไทยเวียตเจ็ท": "ไทยเวียตเจ็ท", "ไทยไลอ้อนแอร์": "ไทยไลอ้อนแอร์" }
             },
             en: {
                 title: "DEPARTURES",
                 headers: { time: "Time", flight: "Flight No.", logo: "Logo", airline: "Airline", dest: "Destination", gate: "Gate", status: "Status" },
-                status: { "ກົງເວລາ": "ON TIME", "ກຳລังຂຶ້ນເຄື່ອງ": "BOARDING", "ເອີ້ນຂຶ້ນເຄື່ອງຄັ້ງສຸດທ້າຍ": "FINAL CALL", "ຊັກຊ້າ": "DELAYED", "ຍົກເລີກ": "CANCELLED" },
-                places: { "ວຽງຈັນ": "VIENTIANE", "ບາງກອກ": "BANGKOK", "ຮ່າໂນ້ຍ": "HANOI", "ຊຽງໃໝ່": "CHIANG MAI", "ສຽມຣຽບ": "SIEM REAP", "ຄຸນໝິງ": "KUNMING" },
-                airlines: { "ການບິນລາວ": "LAO AIRLINES", "ແອເອເຊຍ": "AIRASIA", "...": "...", "ໄທແອເອເຊຍ": "THAI AIRASIA", "ບາງກອກແອເວ": "BANGKOK AIRWAYS", "...": "...", "ການບິນໄທ": "THAI AIRWAYS", "ຫວຽດນາມແອລາຍ": "VIETNAM AIRLINES", "ໄຊນ່າອิສເທີน": "CHINA EASTERN", "ສະກູດ": "SCOOT" }
+                status: { "ตรงเวลา": "ON TIME", "กำลังขึ้นเครื่อง": "BOARDING", "เรียกขึ้นเครื่องครั้งสุดท้าย": "FINAL CALL", "ล่าช้า": "DELAYED", "ยกเลิก": "CANCELLED" },
+                places: { "สุวรรณภูมิ": "SUVARNABHUMI", "ดอนเมือง": "DON MUEANG", "เชียงใหม่": "CHIANG MAI" },
+                airlines: { "การบินไทย": "THAI AIRWAYS", "ไทยแอร์เอเชีย": "THAI AIRASIA", "ไทยเวียตเจ็ท": "THAI VIETJET", "ไทยไลอ้อนแอร์": "THAI LION AIR" }
             },
             zh: {
                 title: "出发 (DEPARTURES)",
                 headers: { time: "时间", flight: "Flight No.", logo: "标志", airline: "航空公司", dest: "目的地", gate: "登机口", status: "状态" },
-                status: { "ກົງເວລາ": "准点", "ກຳລັງຂຶ້ນເຄື່ອງ": "登机中", "ເອີ້ນຂຶ້ນເຄື່ອງຄັ້ງສຸດທ້າຍ": "最后呼叫", "ຊັກຊ້າ": "延误", "ຍົກເລີກ": "取消" },
-                places: { "ວຽງຈັນ": "万象", "ບາງກອກ": "曼谷", "ຮ່າໂນ້ຍ": "河内", "ຊຽງໃໝ່": "清迈", "ສຽມຣຽບ": "暹粒", "ຄຸນໝິງ": "昆明" },
-                airlines: { "ການບິນລາວ": "老挝航空", "ແອເອเชຍ": "亚洲航空", "ໄທແອເອเชຍ": "泰国亚洲航空", "ບາງກອກແອເວ": "曼谷航空", "ການບິນໄท": "泰国航空", "ຫວຽດນามແອລາຍ": "越南航空", "ໄຊນ່າອິສເທີນ": "中国东方航空", "ສະກູດ": "酷航" }
+                status: { "ตรงเวลา": "准点", "กำลังขึ้นเครื่อง": "登机中", "เรียกขึ้นเครื่องครั้งสุดท้าย": "最后呼叫", "ล่าช้า": "延误", "ยกเลิก": "取消" },
+                places: { "สุวรรณภูมิ": "素万那普", "ดอนเมือง": "廊曼", "เชียงใหม่": "清迈" },
+                airlines: { "การบินไทย": "泰国航空", "ไทยแอร์เอเชีย": "泰国亚洲航空", "ไทยเวียตเจ็ท": "泰国越捷航空", "ไทยไลอ้อนแอร์": "泰国狮航" }
             }
         };
 
-        // ตั้งค่าให้ภาษาลาว (lo) เป็นค่าเริ่มต้นของอาเรย์ลำดับวนลูป
-        const languages = ['lo', 'en', 'zh'];
+        const languages = ['th', 'en', 'zh'];
         let currentLangIndex = 0;
         let flightList = []; 
 
@@ -200,7 +195,6 @@
             void tableElement.offsetWidth;
             tableElement.classList.add('fade-in');
 
-            // อัปเดตส่วนหัวข้อตารางตามภาษาของรอบนั้นๆ
             document.getElementById('page-title').textContent = dict.title;
             document.getElementById('th-time').textContent = dict.headers.time;
             document.getElementById('th-flight').textContent = dict.headers.flight; 
@@ -220,7 +214,6 @@
 
                 const statusClass = statusStyleMap[rawStatus] || "status-ON-TIME";
                 
-                // ค้นหาคำแปลโดยดึงข้อมูลภาษาลาวที่บันทึกไว้มาเป็นคีย์ตรวจสอบ
                 const translatedStatus = dict.status[rawStatus] || rawStatus;
                 const translatedDest = dict.places[rawDest] || rawDest;
                 const translatedAirline = dict.airlines[rawAirline] || rawAirline;
@@ -237,7 +230,7 @@
                         <td class="logo-col">${logoHtml}</td>
                         <td class="airline-col">${translatedAirline}</td>
                         <td class="dest-col">${translatedDest}</td>
-                        <td class="gate-col">${flight.gate}</td>
+                        <td class="gate-col">${flight.gate || '-'}</td>
                         <td class="status-col ${statusClass}">${translatedStatus}</td>
                     </tr>
                 `;
@@ -258,7 +251,7 @@
             }
         });
 
-        // วนลูปสลับหน้าจอ 3 ภาษา หน้าละ 30 วินาที
+        // วนลูปสลับหน้าจอ 3 ภาษา
         setInterval(() => {
             currentLangIndex = (currentLangIndex + 1) % languages.length;
             renderUI();
