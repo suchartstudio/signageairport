@@ -3,295 +3,92 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Airport Central Management (FIDS & Signage)</title>
+    <title>FIDS Admin - Khon Kaen Airport</title>
     <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #1a1a1a; color: #ffffff; font-family: 'Chakra Petch', sans-serif; padding: 20px; max-width: 1200px; margin: 0 auto; }
-        
-        /* ระบบ Tabs */
-        .tabs { display: flex; border-bottom: 2px solid #333; margin-bottom: 20px; }
-        .tab { padding: 15px 30px; cursor: pointer; font-size: 1.5rem; font-weight: bold; color: #888; background: #222; border-radius: 8px 8px 0 0; margin-right: 5px; transition: 0.3s; }
-        .tab:hover { color: #fff; background: #333; }
-        .tab.active { color: #000; background: #ffcc00; }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-
-        /* ฟอร์มและปุ่ม */
-        h2 { border-bottom: 2px solid #ffcc00; padding-bottom: 10px; color: #ffcc00; }
+        body { background-color: #1a1a1a; color: #ffffff; font-family: 'Chakra Petch', sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
+        h2 { border-bottom: 2px solid #ffcc00; padding-bottom: 10px; }
         .form-group { margin-bottom: 15px; display: flex; flex-direction: column; }
         label { font-size: 1.2rem; margin-bottom: 5px; color: #ffcc00; }
-        input, select { padding: 10px; font-size: 1.1rem; font-family: 'Chakra Petch', sans-serif; background: #333; color: white; border: 1px solid #555; border-radius: 4px; }
-        button { background-color: #007bff; color: #fff; font-size: 1.2rem; font-weight: bold; padding: 12px; border: none; cursor: pointer; border-radius: 4px; transition: background 0.2s; }
-        button:hover { background-color: #0056b3; }
-        .btn-success { background-color: #00cc66; color: #000; }
-        .btn-success:hover { background-color: #00b359; }
-        .btn-warning { background-color: #ffcc00; color: #000; }
-        .btn-danger { background-color: #ff3333; }
-
-        /* Signage Editor UI */
-        .signage-layout { display: flex; gap: 20px; }
-        .tools-panel { width: 35%; background: #222; padding: 20px; border-radius: 8px; max-height: 700px; overflow-y: auto; }
-        .preview-panel { width: 65%; }
-        
-        /* Live Preview Canvas (จำลองหน้าจอ 16:9) */
-        .canvas-container { width: 100%; aspect-ratio: 16/9; background: #000; border: 2px dashed #555; position: relative; overflow: hidden; border-radius: 8px; margin-top: 15px; }
-        
-        .element-item { background: #333; padding: 10px; margin-bottom: 10px; border-radius: 6px; border-left: 4px solid #ffcc00; }
-        .coord-inputs { display: flex; gap: 10px; margin-top: 5px; }
-        .coord-inputs input { width: 100%; padding: 5px; font-size: 1rem; }
-
-        /* FIDS List */
-        .flight-item { background: #2a2a2a; padding: 15px; margin-bottom: 10px; border-radius: 4px; display: flex; justify-content: space-between; }
+        input, select { padding: 12px; font-size: 1.2rem; font-family: 'Chakra Petch', sans-serif; background: #333; color: white; border: 1px solid #555; border-radius: 4px; }
+        .btn-container { display: flex; gap: 10px; }
+        button { background-color: #ffcc00; color: #000; font-size: 1.2rem; font-weight: bold; padding: 15px; border: none; cursor: pointer; border-radius: 4px; flex-grow: 1; transition: background 0.2s; }
+        button:hover { background-color: #e6b800; }
+        #cancelEditBtn { background-color: #555; color: #fff; display: none; }
+        .flight-list { margin-top: 40px; }
+        .flight-item { background: #2a2a2a; padding: 15px; margin-bottom: 10px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; }
+        .edit-btn { background-color: #007bff; color: white; padding: 8px 15px; }
+        .delete-btn { background-color: #ff3333; color: white; padding: 8px 15px; }
     </style>
 </head>
 <body>
 
-    <div class="tabs">
-        <div class="tab active" onclick="switchTab('fids')">✈️ ระบบตารางบิน (FIDS)</div>
-        <div class="tab" onclick="switchTab('signage')">📺 ระบบป้ายดิจิทัล (Signage / Wayfinding)</div>
-    </div>
+    <h2 id="form-title">แผงควบคุมตารางการบิน - เพิ่มเที่ยวบินใหม่</h2>
 
-    <!-- TAB 1: ระบบตารางเที่ยวบิน (FIDS) โค้ดเดิมย่อส่วน -->
-    <div id="fids-tab" class="tab-content active">
-        <button class="btn-success" id="loadTemplateBtn" style="width: 100%; margin-bottom: 20px;">📥 โหลดตารางเที่ยวบินขอนแก่นอัตโนมัติ (ก.ค. 2026)</button>
-        <div style="display: flex; gap: 20px;">
-            <div style="width: 40%; background: #222; padding: 20px; border-radius: 8px;">
-                <h2>จัดการเที่ยวบิน</h2>
-                <form id="addFlightForm">
-                    <div class="form-group"><label>เวลา (HH:MM)</label><input type="time" id="time" required></div>
-                    <div class="form-group"><label>Flight No.</label><input type="text" id="flightNo" required></div>
-                    <div class="form-group"><label>สายการบิน</label><input type="text" id="airline" required></div>
-                    <div class="form-group"><label>ปลายทาง</label><input type="text" id="destination" required></div>
-                    <div class="form-group"><label>ทางออก (Gate)</label><input type="text" id="gate"></div>
-                    <div class="form-group"><label>สถานะ</label>
-                        <select id="status">
-                            <option value="ตรงเวลา">ตรงเวลา (ON TIME)</option>
-                            <option value="กำลังขึ้นเครื่อง">กำลังขึ้นเครื่อง (BOARDING)</option>
-                            <option value="ล่าช้า">ล่าช้า (DELAYED)</option>
-                            <option value="ยกเลิก">ยกเลิก (CANCELLED)</option>
-                        </select>
-                    </div>
-                    <button type="submit" class="btn-warning" style="width: 100%;">บันทึกเที่ยวบิน</button>
-                </form>
-            </div>
-            <div style="width: 60%; background: #222; padding: 20px; border-radius: 8px;">
-                <h2>เที่ยวบินปัจจุบัน</h2>
-                <div id="admin-flight-data"></div>
-            </div>
+    <form id="addFlightForm">
+        <div class="form-group"><label>เวลา (Time - HH:MM)</label><input type="time" id="time" required></div>
+        <div class="form-group"><label>Flight No.</label><input type="text" id="flightNo" required></div>
+        <div class="form-group"><label>สายการบิน</label><input type="text" id="airline" required></div>
+        <div class="form-group"><label>ปลายทาง</label><input type="text" id="destination" required></div>
+        <div class="form-group"><label>ทางออก (Gate)</label><input type="text" id="gate"></div>
+        <div class="form-group">
+            <label>สถานะ (Status)</label>
+            <select id="status">
+                <option value="ตรงเวลา">ตรงเวลา (ON TIME)</option>
+                <option value="กำลังขึ้นเครื่อง">กำลังขึ้นเครื่อง (BOARDING)</option>
+                <option value="เรียกขึ้นเครื่องครั้งสุดท้าย">เรียกขึ้นเครื่องครั้งสุดท้าย (FINAL CALL)</option>
+                <option value="ล่าช้า">ล่าช้า (DELAYED)</option>
+                <option value="ยกเลิก">ยกเลิก (CANCELLED)</option>
+            </select>
         </div>
-    </div>
-
-    <!-- TAB 2: ระบบป้ายดิจิทัล (Signage Control) -->
-    <div id="signage-tab" class="tab-content">
-        <div class="signage-layout">
-            
-            <!-- Panel เครื่องมือปรับแต่ง -->
-            <div class="tools-panel">
-                <h2>เลือกจอแสดงผล (Screens)</h2>
-                <select id="screenSelect" style="width: 100%; margin-bottom: 20px;">
-                    <option value="screen_main">จอโถงกลาง (Main Hall)</option>
-                    <option value="screen_gate1">จอทางเดินไป Gate 1</option>
-                    <option value="screen_baggage">จอสายพานรับกระเป๋า</option>
-                </select>
-
-                <h2>เพิ่มสื่อใหม่</h2>
-                <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-                    <button onclick="addElement('text')">📝 เพิ่มข้อความ</button>
-                    <button onclick="addElement('image')" class="btn-success">🖼️ เพิ่มรูปภาพ</button>
-                </div>
-
-                <h2>เลเยอร์สื่อบนจอ</h2>
-                <div id="elementList"></div>
-                <button onclick="saveSignage()" class="btn-warning" style="width: 100%; margin-top: 15px;">💾 บันทึกเลย์เอาต์ขึ้นจอจริง</button>
-            </div>
-
-            <!-- Panel แสดงผลลัพธ์จำลอง -->
-            <div class="preview-panel">
-                <h2 style="display: flex; justify-content: space-between;">
-                    Live Preview (อัตราส่วน 16:9)
-                    <span style="font-size: 1rem; color: #888;">พิกัดเป็นเปอร์เซ็นต์ (X%, Y%)</span>
-                </h2>
-                <div class="canvas-container" id="previewCanvas">
-                    <!-- Elements จำลองจะถูกวาดลงที่นี่ -->
-                </div>
-                <p style="color: #aaa; margin-top: 10px;">* นำ URL <code style="color: #ffcc00;">signage.html?screen=screen_main</code> ไปเปิดบนทีวีที่ต้องการ</p>
-            </div>
+        
+        <div class="btn-container">
+            <button type="submit" id="submitBtn">บันทึกเที่ยวบิน</button>
+            <button type="button" id="cancelEditBtn">ยกเลิกการแก้ไข</button>
         </div>
+    </form>
+
+    <div class="flight-list">
+        <h2>เที่ยวบินปัจจุบัน (Active Flights)</h2>
+        <div id="admin-flight-data"></div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
-        import { getDatabase, ref, push, set, onValue, remove, update } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
+        import { getDatabase, ref, push, onValue, remove, update } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyDMptdLpLEdbeVFKZj82M0gyoV2m_2y5Pk",
-            authDomain: "suchartstudio-9a78d.firebaseapp.com",
-            databaseURL: "https://suchartstudio-9a78d-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "suchartstudio-9a78d",
-            storageBucket: "suchartstudio-9a78d.firebasestorage.app",
-            messagingSenderId: "953369646185",
-            appId: "1:953369646185:web:6e52decfba29e9936ebef8"
-        };
+        const firebaseConfig = { apiKey: "AIzaSyDMptdLpLEdbeVFKZj82M0gyoV2m_2y5Pk", authDomain: "suchartstudio-9a78d.firebaseapp.com", databaseURL: "https://suchartstudio-9a78d-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "suchartstudio-9a78d", storageBucket: "suchartstudio-9a78d.firebasestorage.app", messagingSenderId: "953369646185", appId: "1:953369646185:web:6e52decfba29e9936ebef8" };
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
-
-        // --- ระบบ Tabs ---
-        window.switchTab = function(tabName) {
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            event.target.classList.add('active');
-            document.getElementById(tabName + '-tab').classList.add('active');
-        };
-
-        // ==========================================
-        // ส่วนที่ 1: ตารางเที่ยวบิน (FIDS Logic ย่อ)
-        // ==========================================
         const flightsRef = ref(db, 'flights');
-        let editFlightId = null;
-        document.getElementById('addFlightForm').addEventListener('submit', (e) => {
+
+        let editFlightId = null; let cacheFlights = {}; 
+        const form = document.getElementById('addFlightForm');
+
+        function resetForm() { editFlightId = null; form.reset(); document.getElementById('form-title').textContent = "เพิ่มเที่ยวบินใหม่"; document.getElementById('submitBtn').textContent = "บันทึกเที่ยวบิน"; document.getElementById('cancelEditBtn').style.display = "none"; }
+        document.getElementById('cancelEditBtn').addEventListener('click', resetForm);
+
+        form.addEventListener('submit', (e) => {
             e.preventDefault();
-            const data = {
-                time: document.getElementById('time').value, flightNo: document.getElementById('flightNo').value.toUpperCase(),
-                airline: document.getElementById('airline').value, destination: document.getElementById('destination').value,
-                gate: document.getElementById('gate').value, status: document.getElementById('status').value
-            };
-            if(editFlightId) { update(ref(db, `flights/${editFlightId}`), data).then(() => { e.target.reset(); editFlightId = null; }); } 
-            else { push(flightsRef, data).then(() => e.target.reset()); }
+            const data = { time: document.getElementById('time').value, flightNo: document.getElementById('flightNo').value.toUpperCase(), airline: document.getElementById('airline').value, destination: document.getElementById('destination').value, gate: document.getElementById('gate').value, status: document.getElementById('status').value };
+            if (editFlightId) update(ref(db, `flights/${editFlightId}`), data).then(resetForm);
+            else push(flightsRef, data).then(resetForm);
         });
 
         onValue(flightsRef, (snapshot) => {
-            const data = snapshot.val();
-            const list = document.getElementById('admin-flight-data');
-            list.innerHTML = '';
+            const data = snapshot.val(); cacheFlights = data || {}; 
+            const list = document.getElementById('admin-flight-data'); list.innerHTML = '';
             if (data) {
-                Object.entries(data).forEach(([key, f]) => {
+                Object.entries(data).sort((a,b)=>a[1].time.localeCompare(b[1].time)).forEach(([id, f]) => {
                     list.innerHTML += `<div class="flight-item">
-                        <div><strong>${f.time} - ${f.flightNo}</strong> (${f.airline})<br>ไป: ${f.destination} | Gate: ${f.gate} | <span style="color:#ffcc00">${f.status}</span></div>
-                        <button class="btn-danger delete-flight" data-id="${key}">ลบ</button>
+                        <div><strong>${f.time} - ${f.flightNo}</strong> (${f.airline})<br>ไป: ${f.destination} | Gate: ${f.gate || '-'} | <span style="color:#ffcc00">${f.status}</span></div>
+                        <div><button class="edit-btn" onclick="editF('${id}')">แก้ไข</button> <button class="delete-btn" onclick="delF('${id}')">ลบ</button></div>
                     </div>`;
                 });
-                document.querySelectorAll('.delete-flight').forEach(btn => btn.addEventListener('click', (e) => remove(ref(db, `flights/${e.target.dataset.id}`))));
             }
         });
-
-        // ==========================================
-        // ส่วนที่ 2: ระบบป้ายดิจิทัล (Signage Builder)
-        // ==========================================
-        let currentScreen = 'screen_main';
-        let signageElements = []; // เก็บเลเยอร์สื่อ
-
-        // โหลดข้อมูลจอที่เลือกเมื่อเปลี่ยน Dropdown
-        document.getElementById('screenSelect').addEventListener('change', (e) => {
-            currentScreen = e.target.value;
-            loadSignageData();
-        });
-
-        function loadSignageData() {
-            onValue(ref(db, `signage/${currentScreen}`), (snapshot) => {
-                signageElements = snapshot.val() || [];
-                renderTools();
-                renderPreview();
-            }, { onlyOnce: true });
-        }
-
-        // เพิ่ม Element ใหม่ลงไป
-        window.addElement = function(type) {
-            if (type === 'text') {
-                signageElements.push({ type: 'text', content: 'ข้อความใหม่', x: 50, y: 50, size: 4, color: '#ffffff', bold: false });
-            } else if (type === 'image') {
-                signageElements.push({ type: 'image', url: 'https://via.placeholder.com/400x200?text=Image', x: 50, y: 50, width: 30 });
-            }
-            renderTools();
-            renderPreview();
-        };
-
-        // ลบ Element
-        window.removeElement = function(index) {
-            signageElements.splice(index, 1);
-            renderTools();
-            renderPreview();
-        };
-
-        // อัปเดตค่าเมื่อผู้ใช้พิมพ์ในฟอร์ม
-        window.updateProp = function(index, prop, value) {
-            signageElements[index][prop] = value;
-            renderPreview();
-        };
-
-        // เรนเดอร์เครื่องมือตั้งค่า (ฝั่งซ้าย)
-        function renderTools() {
-            const list = document.getElementById('elementList');
-            list.innerHTML = '';
-            signageElements.forEach((el, index) => {
-                let controlsHtml = '';
-                if (el.type === 'text') {
-                    controlsHtml = `
-                        <input type="text" value="${el.content}" oninput="updateProp(${index}, 'content', this.value)" style="margin-bottom:5px; width:95%;">
-                        <div class="coord-inputs">
-                            <label>สี <input type="color" value="${el.color}" oninput="updateProp(${index}, 'color', this.value)"></label>
-                            <label>ขนาด(vw) <input type="number" value="${el.size}" oninput="updateProp(${index}, 'size', this.value)"></label>
-                        </div>
-                    `;
-                } else if (el.type === 'image') {
-                    controlsHtml = `
-                        <input type="text" placeholder="Image URL" value="${el.url}" oninput="updateProp(${index}, 'url', this.value)" style="margin-bottom:5px; width:95%;">
-                        <div class="coord-inputs">
-                            <label>กว้าง(%) <input type="number" value="${el.width}" oninput="updateProp(${index}, 'width', this.value)"></label>
-                        </div>
-                    `;
-                }
-                
-                list.innerHTML += `
-                    <div class="element-item">
-                        <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                            <strong>${el.type === 'text' ? '📝 ข้อความ' : '🖼️ รูปภาพ'}</strong>
-                            <button class="btn-danger" style="padding:2px 8px; font-size:0.9rem;" onclick="removeElement(${index})">X</button>
-                        </div>
-                        ${controlsHtml}
-                        <div class="coord-inputs">
-                            <label>พิกัดแกน X (%) <input type="number" value="${el.x}" oninput="updateProp(${index}, 'x', this.value)"></label>
-                            <label>พิกัดแกน Y (%) <input type="number" value="${el.y}" oninput="updateProp(${index}, 'y', this.value)"></label>
-                        </div>
-                    </div>
-                `;
-            });
-        }
-
-        // เรนเดอร์จอภาพจำลอง (ฝั่งขวา)
-        function renderPreview() {
-            const canvas = document.getElementById('previewCanvas');
-            canvas.innerHTML = '';
-            signageElements.forEach(el => {
-                const domEl = document.createElement(el.type === 'text' ? 'div' : 'img');
-                // ตั้งค่าพิกัดแบบจุดกึ่งกลาง (Center Anchor) เพื่อให้จัดวางง่าย
-                domEl.style.position = 'absolute';
-                domEl.style.left = el.x + '%';
-                domEl.style.top = el.y + '%';
-                domEl.style.transform = 'translate(-50%, -50%)'; 
-
-                if (el.type === 'text') {
-                    domEl.textContent = el.content;
-                    domEl.style.color = el.color;
-                    domEl.style.fontSize = el.size + 'vw'; // ปรับสเกลตามหน้าจอ
-                    domEl.style.fontWeight = 'bold';
-                    domEl.style.whiteSpace = 'nowrap';
-                } else if (el.type === 'image') {
-                    domEl.src = el.url;
-                    domEl.style.width = el.width + '%';
-                }
-                canvas.appendChild(domEl);
-            });
-        }
-
-        // เซฟลง Firebase
-        window.saveSignage = function() {
-            set(ref(db, `signage/${currentScreen}`), signageElements).then(() => {
-                alert(`บันทึกเลย์เอาต์สำหรับ ${currentScreen} เรียบร้อยแล้ว!\nหน้าจอจริงจะอัปเดตอัตโนมัติ`);
-            });
-        };
-
-        // โหลดข้อมูลเริ่มต้น
-        loadSignageData();
+        window.editF = (id) => { const f = cacheFlights[id]; if(f) { editFlightId = id; document.getElementById('time').value = f.time; document.getElementById('flightNo').value = f.flightNo; document.getElementById('airline').value = f.airline; document.getElementById('destination').value = f.destination; document.getElementById('gate').value = f.gate; document.getElementById('status').value = f.status; document.getElementById('cancelEditBtn').style.display = "block"; } };
+        window.delF = (id) => { if(confirm("ลบเที่ยวบินนี้?")) remove(ref(db, `flights/${id}`)); };
     </script>
 </body>
 </html>
