@@ -4,86 +4,72 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Airport Digital Signage</title>
-    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body, html {
-            margin: 0; padding: 0; width: 100%; height: 100%;
-            background-color: #0a0a0a; overflow: hidden; font-family: 'Chakra Petch', sans-serif;
-        }
-        #screen-container {
-            width: 100vw; height: 100vh; position: relative;
-        }
-        .signage-element {
+        body, html { margin: 0; padding: 0; width: 100vw; height: 100vh; background-color: #000; overflow: hidden; font-family: 'Chakra Petch', sans-serif; }
+        #screen-container { width: 100%; height: 100%; position: relative; }
+        .element {
             position: absolute;
-            transform: translate(-50%, -50%); /* จัดวางพิกัดจากจุดกึ่งกลาง */
-            transition: all 0.5s ease-out; /* แอนิเมชันเวลาแอดมินขยับภาพ */
-        }
-        .signage-text {
-            font-weight: 700;
-            white-space: nowrap;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-sizing: border-box;
+            transition: all 0.3s ease; /* ขยับนุ่มนวลเวลาแอดมินลากวาง */
         }
     </style>
 </head>
 <body>
 
-    <div id="screen-container">
-        <!-- ระบบจะวาดป้ายข้อความและรูปภาพแบบ Real-time ลงที่นี่ -->
-    </div>
+    <div id="screen-container"></div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
         import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyDMptdLpLEdbeVFKZj82M0gyoV2m_2y5Pk",
-            authDomain: "suchartstudio-9a78d.firebaseapp.com",
-            databaseURL: "https://suchartstudio-9a78d-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "suchartstudio-9a78d",
-            storageBucket: "suchartstudio-9a78d.firebasestorage.app",
-            messagingSenderId: "953369646185",
-            appId: "1:953369646185:web:6e52decfba29e9936ebef8"
-        };
+        const firebaseConfig = { apiKey: "AIzaSyDMptdLpLEdbeVFKZj82M0gyoV2m_2y5Pk", authDomain: "suchartstudio-9a78d.firebaseapp.com", databaseURL: "https://suchartstudio-9a78d-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "suchartstudio-9a78d", storageBucket: "suchartstudio-9a78d.firebasestorage.app", messagingSenderId: "953369646185", appId: "1:953369646185:web:6e52decfba29e9936ebef8" };
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // ดึงชื่อจอจาก URL Parameter (เช่น ?screen=screen_gate1)
         const urlParams = new URLSearchParams(window.location.search);
-        // ถ้าไม่ได้ระบุ ให้ดึงจอ screen_main เป็นค่า Default
         const screenId = urlParams.get('screen') || 'screen_main'; 
-
         const container = document.getElementById('screen-container');
 
-        // ดึงข้อมูลการจัดวางจาก Firebase แบบ Real-time
+        let clockElements = []; // เก็บอ้างอิง DOM ของนาฬิกาเพื่ออัปเดตเวลา
+
         onValue(ref(db, `signage/${screenId}`), (snapshot) => {
             const elements = snapshot.val() || [];
-            container.innerHTML = ''; // ล้างหน้าจอเก่า
-
-            if (elements.length === 0) {
-                container.innerHTML = `<h1 style="color:#333; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);">No Content on ${screenId}</h1>`;
-                return;
-            }
+            container.innerHTML = '';
+            clockElements = [];
 
             elements.forEach(el => {
-                let domEl;
-                if (el.type === 'text') {
-                    domEl = document.createElement('div');
-                    domEl.className = 'signage-element signage-text';
-                    domEl.textContent = el.content;
-                    domEl.style.color = el.color;
-                    // ใช้ขนาด vw (Viewport Width) เพื่อให้สเกลตัวอักษรขยายตามทีวี
-                    domEl.style.fontSize = el.size + 'vw'; 
-                } else if (el.type === 'image') {
-                    domEl = document.createElement('img');
-                    domEl.className = 'signage-element';
-                    domEl.src = el.url;
-                    domEl.style.width = el.width + '%'; // ขนาดเทียบกับความกว้างจอ
+                const div = document.createElement('div');
+                div.className = 'element';
+                div.style.left = `${el.x}%`; div.style.top = `${el.y}%`;
+                div.style.width = `${el.w}%`; div.style.height = `${el.h}%`;
+                div.style.zIndex = el.zIndex || 1;
+
+                if (el.type === 'shape') { div.style.backgroundColor = el.bgColor; }
+                if (el.type === 'image') { div.style.backgroundImage = `url(${el.url})`; div.style.backgroundSize = 'contain'; div.style.backgroundRepeat = 'no-repeat'; div.style.backgroundPosition = 'center'; }
+                if (el.type === 'text') { div.textContent = el.content; div.style.color = el.color; div.style.fontSize = `${el.fontSize}vw`; div.style.fontWeight = 'bold'; }
+                if (el.type === 'symbol') { div.textContent = el.symbol; div.style.fontSize = `${el.fontSize}vw`; }
+                if (el.type === 'clock') { 
+                    div.style.color = el.color; div.style.fontSize = `${el.fontSize}vw`; div.style.fontWeight = 'bold'; 
+                    clockElements.push(div); // เก็บไว้ให้ setInterval อัปเดต
                 }
 
-                domEl.style.left = el.x + '%';
-                domEl.style.top = el.y + '%';
-                container.appendChild(domEl);
+                container.appendChild(div);
             });
+            updateClocks(); // อัปเดตทันทีที่โหลดเสร็จ
         });
+
+        // ฟังก์ชันให้นาฬิกาเดินตลอดเวลา
+        function updateClocks() {
+            if (clockElements.length === 0) return;
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
+            clockElements.forEach(el => el.textContent = timeString);
+        }
+        setInterval(updateClocks, 1000); // อัปเดตทุกวินาที
     </script>
 </body>
 </html>
