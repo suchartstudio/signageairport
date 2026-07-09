@@ -7,134 +7,207 @@
     <style>
         body { background: #1a1a1a; color: #fff; font-family: 'Chakra Petch', sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
         
-        /* แถบเครื่องมือด้านซ้าย */
-        .sidebar { width: 350px; background: #222; padding: 20px; overflow-y: auto; border-right: 2px solid #444; display: flex; flex-direction: column; gap: 15px; }
+        #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0a0a0a; display: flex; justify-content: center; align-items: center; z-index: 9999; flex-direction: column; }
+        .login-box { background: #222; padding: 40px; border-radius: 8px; text-align: center; border: 2px solid #ffcc00; }
+        .login-box input { padding: 10px; font-size: 1.2rem; width: 80%; margin-bottom: 15px; border-radius: 4px; text-align: center; }
+
+        .sidebar { width: 360px; background: #222; padding: 20px; overflow-y: auto; border-right: 2px solid #444; display: flex; flex-direction: column; gap: 15px; }
         .sidebar h2 { color: #ffcc00; margin-top: 0; border-bottom: 1px solid #444; padding-bottom: 10px; }
-        select, input, button { width: 100%; padding: 10px; font-family: 'Chakra Petch'; box-sizing: border-box; background: #333; color: white; border: 1px solid #555; border-radius: 4px; margin-bottom: 10px; }
+        select, input, button { width: 100%; padding: 10px; font-family: 'Chakra Petch'; box-sizing: border-box; background: #333; color: white; border: 1px solid #555; border-radius: 4px; margin-bottom: 5px; }
         button { cursor: pointer; font-weight: bold; }
         .btn-add { background: #007bff; border: none; }
         .btn-add:hover { background: #0056b3; }
-        .btn-save { background: #00cc66; font-size: 1.2rem; border: none; color: black; }
-        
-        /* Properties Panel */
+        .btn-save { background: #00cc66; font-size: 1.2rem; border: none; color: black; margin-top: 10px; }
+        .screen-link { display: inline-block; color: #00aaff; margin-top: 5px; font-size: 1.1rem; text-decoration: none; }
+        .screen-link:hover { text-decoration: underline; }
+
         #props-panel { background: #2a2a2a; padding: 15px; border-radius: 8px; border: 1px solid #444; display: none; }
+        .layer-controls { display: flex; gap: 10px; margin-top: 10px; }
+        .layer-controls button { background: #444; margin: 0; }
         
-        /* พื้นที่ออกแบบด้านขวา */
         .main-area { flex: 1; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #0a0a0a; }
+        #canvas { width: 100%; max-width: 1000px; aspect-ratio: 16/9; background: #000; position: relative; border: 2px dashed #555; overflow: hidden; }
         
-        /* Canvas จำลอง 16:9 */
-        #canvas { width: 100%; max-width: 1000px; aspect-ratio: 16/9; background: #000; position: relative; border: 2px dashed #555; overflow: hidden; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
-        
-        /* องค์ประกอบที่ลากได้ */
         .element { position: absolute; user-select: none; cursor: grab; box-sizing: border-box; display: flex; justify-content: center; align-items: center; }
-        .element:active { cursor: grabbing; }
-        .element.active { border: 2px solid #ffcc00 !important; z-index: 100; }
-        
-        /* ปุ่ม Resize (มุมขวาล่าง) */
+        .element.active { border: 2px solid #ffcc00 !important; }
         .resizer { width: 15px; height: 15px; background: #ffcc00; position: absolute; right: -5px; bottom: -5px; cursor: se-resize; border-radius: 50%; display: none; }
         .element.active .resizer { display: block; }
     </style>
 </head>
 <body>
 
+    <div id="login-overlay">
+        <div class="login-box">
+            <h2 style="border: none;">ระบบควบคุมป้าย (Signage Editor)</h2>
+            <input type="password" id="passInput" placeholder="ใส่รหัสผ่าน...">
+            <button onclick="checkPassword()" style="background:#ffcc00; color:#000;">เข้าสู่ระบบ</button>
+        </div>
+    </div>
+
     <div class="sidebar">
-        <h2>ควบคุมหน้าจอ (Screens)</h2>
-        <select id="screenSelect">
-            <option value="screen_main">จอโถงกลาง (Main Hall)</option>
-            <option value="screen_gate1">จอทางเดินไป Gate 1</option>
-            <option value="screen_baggage">จอสายพานรับกระเป๋า</option>
-        </select>
-        <button class="btn-save" onclick="saveLayout()">💾 บันทึกขึ้นจอจริง</button>
+        <h2>จัดการจอภาพ (Screens)</h2>
+        <select id="screenSelect"></select>
+        <div style="display: flex; gap: 10px;">
+            <button onclick="createNewScreen()" style="background: #28a745; border:none;">➕ สร้างจอใหม่</button>
+            <button onclick="deleteCurrentScreen()" style="background: #dc3545; border:none;">🗑️ ลบจอ</button>
+        </div>
+        <a href="#" id="viewScreenLink" class="screen-link" target="_blank">🔗 เปิดดูหน้าจอที่กำลังแก้ไข</a>
+        
+        <button class="btn-save" onclick="saveLayout()">💾 บันทึกเลย์เอาต์</button>
 
         <h2>เพิ่มองค์ประกอบ</h2>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px;">
             <button class="btn-add" onclick="addElement('text')">📝 ข้อความ</button>
-            <button class="btn-add" onclick="addElement('image')">🖼️ รูปภาพ</button>
+            <button class="btn-add" onclick="triggerImageUpload()">🖼️ อัปโหลดรูปภาพ</button>
             <button class="btn-add" onclick="addElement('shape')">🟦 กรอบสี</button>
-            <button class="btn-add" onclick="addElement('symbol')">🚻 สัญลักษณ์</button>
-            <button class="btn-add" onclick="addElement('clock')" style="grid-column: span 2;">⏰ นาฬิกา</button>
+            <button class="btn-add" onclick="addElement('clock')">⏰ นาฬิกา</button>
         </div>
+        <input type="file" id="imageUploader" accept="image/*" style="display: none;">
 
-        <!-- กล่องตั้งค่าคุณสมบัติ (จะโชว์เมื่อคลิกเลือกวัตถุ) -->
         <div id="props-panel">
             <h3 style="margin-top:0; color:#ffcc00;">ตั้งค่าวัตถุที่เลือก</h3>
             <div id="props-content"></div>
-            <button onclick="deleteActiveElement()" style="background:#ff3333; border:none; margin-top:10px;">🗑️ ลบวัตถุนี้</button>
+            
+            <label style="margin-top:10px; display:block; color:#aaa;">จัดการ Layer (Z-Index)</label>
+            <div class="layer-controls">
+                <button onclick="changeLayer(1)">▲ ดันขึ้น</button>
+                <button onclick="changeLayer(-1)">▼ ส่งลง</button>
+            </div>
+
+            <button onclick="deleteActiveElement()" style="background:#ff3333; border:none; margin-top:15px;">🗑️ ลบวัตถุนี้</button>
         </div>
     </div>
 
     <div class="main-area">
-        <h2 style="margin-top:0;">Layout Editor (Drag, Drop & Resize)</h2>
+        <h2 style="margin-top:0;">Layout Editor (ลาก, วาง, ขยาย, จัด Layer)</h2>
         <div id="canvas"></div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
-        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
+        import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
+        import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-storage.js";
 
         const firebaseConfig = { apiKey: "AIzaSyDMptdLpLEdbeVFKZj82M0gyoV2m_2y5Pk", authDomain: "suchartstudio-9a78d.firebaseapp.com", databaseURL: "https://suchartstudio-9a78d-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "suchartstudio-9a78d", storageBucket: "suchartstudio-9a78d.firebasestorage.app", messagingSenderId: "953369646185", appId: "1:953369646185:web:6e52decfba29e9936ebef8" };
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
+        const storage = getStorage(app);
 
         let elements = [];
         let activeId = null;
         let currentScreen = 'screen_main';
         const canvas = document.getElementById('canvas');
 
-        // สัญลักษณ์บอกทาง
-        const symbolOptions = { "⬆️": "ลูกศรขึ้น", "⬇️": "ลูกศรลง", "⬅️": "ลูกศรซ้าย", "➡️": "ลูกศรขวา", "🚻": "ห้องน้ำ", "🕌": "ห้องละหมาด", "🛄": "รับกระเป๋า", "🚕": "แท็กซี่" };
+        window.checkPassword = function() {
+            if(document.getElementById('passInput').value === 'admin123') {
+                document.getElementById('login-overlay').style.display = 'none';
+            } else { alert('รหัสผ่านไม่ถูกต้อง'); }
+        };
 
-        // โหลดข้อมูลเมื่อเปลี่ยนจอ
-        document.getElementById('screenSelect').addEventListener('change', (e) => {
-            currentScreen = e.target.value;
-            loadData();
+        // โหลดรายชื่อจอทั้งหมด
+        onValue(ref(db, 'signage_meta/screens'), (snapshot) => {
+            const screens = snapshot.val() || { "screen_main": { name: "จอโถงกลาง (Main)" }};
+            const select = document.getElementById('screenSelect');
+            select.innerHTML = '';
+            for(let id in screens) { select.innerHTML += `<option value="${id}">${screens[id].name}</option>`; }
+            select.value = currentScreen;
+            updateScreenLink();
+            loadLayoutData();
         });
 
-        function loadData() {
+        document.getElementById('screenSelect').addEventListener('change', (e) => {
+            currentScreen = e.target.value; updateScreenLink(); loadLayoutData();
+        });
+
+        function updateScreenLink() {
+            const link = document.getElementById('viewScreenLink');
+            link.href = `signage.html?screen=${currentScreen}`;
+            link.textContent = `🔗 เปิดดูจอภาพ: ${currentScreen}`;
+        }
+
+        window.createNewScreen = function() {
+            const name = prompt("ตั้งชื่อจอภาพใหม่ (เช่น: จอหน้าห้องน้ำ)");
+            if(name) {
+                const id = 'screen_' + Date.now();
+                set(ref(db, `signage_meta/screens/${id}`), { name: name });
+                currentScreen = id;
+            }
+        }
+
+        window.deleteCurrentScreen = function() {
+            if(currentScreen === 'screen_main') return alert("ไม่สามารถลบจอหลักได้");
+            if(confirm("ลบจอภาพและเลย์เอาต์นี้ถาวร?")) {
+                remove(ref(db, `signage_meta/screens/${currentScreen}`));
+                remove(ref(db, `signage/${currentScreen}`));
+                currentScreen = 'screen_main';
+            }
+        }
+
+        function loadLayoutData() {
             onValue(ref(db, `signage/${currentScreen}`), (snapshot) => {
                 elements = snapshot.val() || []; activeId = null; renderCanvas(); updatePropsPanel();
             }, { onlyOnce: true });
         }
 
+        // ระบบอัปโหลดรูปภาพ
+        window.triggerImageUpload = () => document.getElementById('imageUploader').click();
+        
+        document.getElementById('imageUploader').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if(!file) return;
+            const btn = document.querySelector('button[onclick="triggerImageUpload()"]');
+            btn.textContent = "⏳ กำลังอัปโหลด...";
+            
+            try {
+                const sRef = storageRef(storage, `signage_images/${Date.now()}_${file.name}`);
+                await uploadBytes(sRef, file);
+                const url = await getDownloadURL(sRef);
+                
+                elements.push({ id: Date.now(), type: 'image', url: url, x: 40, y: 40, w: 20, h: 30, zIndex: elements.length + 1 });
+                renderCanvas(); saveLayout();
+            } catch(err) { alert("อัปโหลดไม่สำเร็จ กรุณาเช็ค Storage Rules บน Firebase"); console.error(err); }
+            
+            btn.textContent = "🖼️ อัปโหลดรูปภาพ";
+            e.target.value = ''; // reset
+        });
+
         window.addElement = function(type) {
             const el = { id: Date.now(), type, x: 40, y: 40, w: 20, h: 20, zIndex: elements.length + 1 };
             if(type === 'text') { el.content = 'ข้อความ'; el.color = '#ffffff'; el.fontSize = 3; el.h = 10; }
-            if(type === 'image') { el.url = 'https://via.placeholder.com/300x200?text=Image'; }
             if(type === 'shape') { el.bgColor = '#ffcc00'; }
-            if(type === 'symbol') { el.symbol = '⬆️'; el.fontSize = 5; }
-            if(type === 'clock') { el.color = '#ffcc00'; el.fontSize = 4; el.h = 10; }
+            if(type === 'clock') { el.color = '#ffffff'; el.fontSize = 4; el.h = 10; }
             elements.push(el); activeId = el.id; renderCanvas(); updatePropsPanel();
+        }
+
+        window.changeLayer = function(dir) {
+            const el = elements.find(e => e.id === activeId);
+            if(el) { el.zIndex = Math.max(1, (el.zIndex || 1) + dir); renderCanvas(); updatePropsPanel(); }
         }
 
         window.deleteActiveElement = function() {
             elements = elements.filter(e => e.id !== activeId); activeId = null; renderCanvas(); updatePropsPanel();
         }
 
-        // --- ระบบ Render และ Drag & Drop ---
         function renderCanvas() {
             canvas.innerHTML = '';
-            elements.forEach(el => {
+            // จัดเรียงตาม Z-Index ก่อนเรนเดอร์เพื่อให้ทับกันถูกต้อง
+            const sortedElements = [...elements].sort((a,b) => (a.zIndex || 1) - (b.zIndex || 1));
+            
+            sortedElements.forEach(el => {
                 const div = document.createElement('div');
                 div.className = `element ${el.id === activeId ? 'active' : ''}`;
                 div.style.left = `${el.x}%`; div.style.top = `${el.y}%`;
                 div.style.width = `${el.w}%`; div.style.height = `${el.h}%`;
-                div.style.zIndex = el.zIndex;
+                div.style.zIndex = el.zIndex || 1;
 
                 if(el.type === 'shape') { div.style.backgroundColor = el.bgColor; }
                 if(el.type === 'image') { div.style.backgroundImage = `url(${el.url})`; div.style.backgroundSize = 'contain'; div.style.backgroundRepeat = 'no-repeat'; div.style.backgroundPosition = 'center'; }
                 if(el.type === 'text') { div.textContent = el.content; div.style.color = el.color; div.style.fontSize = `${el.fontSize}vw`; div.style.fontWeight = 'bold'; }
-                if(el.type === 'symbol') { div.textContent = el.symbol; div.style.fontSize = `${el.fontSize}vw`; }
                 if(el.type === 'clock') { div.textContent = '12:00'; div.style.color = el.color; div.style.fontSize = `${el.fontSize}vw`; div.style.fontWeight = 'bold'; }
 
-                // ปุ่ม Resize
-                const resizer = document.createElement('div');
-                resizer.className = 'resizer';
-                div.appendChild(resizer);
-
-                // Events
+                const resizer = document.createElement('div'); resizer.className = 'resizer'; div.appendChild(resizer);
                 div.addEventListener('mousedown', (e) => startDrag(e, el));
                 resizer.addEventListener('mousedown', (e) => startResize(e, el));
-
                 canvas.appendChild(div);
             });
         }
@@ -143,40 +216,32 @@
 
         function startDrag(e, el) {
             if(e.target.classList.contains('resizer')) return;
-            isDragging = true; targetEl = el; activeId = el.id;
+            isDragging = true; targetEl = elements.find(e_orig => e_orig.id === el.id); activeId = el.id;
             startX = e.clientX; startY = e.clientY;
             renderCanvas(); updatePropsPanel();
         }
 
         function startResize(e, el) {
-            isResizing = true; targetEl = el; activeId = el.id;
-            startX = e.clientX; startY = e.clientY;
-            startW = el.w; startH = el.h;
-            e.stopPropagation();
+            isResizing = true; targetEl = elements.find(e_orig => e_orig.id === el.id); activeId = el.id;
+            startX = e.clientX; startY = e.clientY; startW = targetEl.w; startH = targetEl.h; e.stopPropagation();
         }
 
         document.addEventListener('mousemove', (e) => {
             if(!targetEl) return;
             const rect = canvas.getBoundingClientRect();
             if(isDragging) {
-                const dx = ((e.clientX - startX) / rect.width) * 100;
-                const dy = ((e.clientY - startY) / rect.height) * 100;
-                targetEl.x += dx; targetEl.y += dy;
-                startX = e.clientX; startY = e.clientY;
-                renderCanvas();
+                targetEl.x += ((e.clientX - startX) / rect.width) * 100;
+                targetEl.y += ((e.clientY - startY) / rect.height) * 100;
+                startX = e.clientX; startY = e.clientY; renderCanvas();
             }
             if(isResizing) {
-                const dw = ((e.clientX - startX) / rect.width) * 100;
-                const dh = ((e.clientY - startY) / rect.height) * 100;
-                targetEl.w = Math.max(5, startW + dw); 
-                targetEl.h = Math.max(5, startH + dh);
+                targetEl.w = Math.max(5, startW + ((e.clientX - startX) / rect.width) * 100); 
+                targetEl.h = Math.max(5, startH + ((e.clientY - startY) / rect.height) * 100);
                 renderCanvas();
             }
         });
-
         document.addEventListener('mouseup', () => { isDragging = false; isResizing = false; targetEl = null; });
 
-        // --- Properties Panel ---
         window.updateProp = function(prop, val) {
             const el = elements.find(e => e.id === activeId);
             if(el) { el[prop] = val; renderCanvas(); }
@@ -189,38 +254,25 @@
             if(!el) { panel.style.display = 'none'; return; }
             
             panel.style.display = 'block';
-            let html = '';
+            let html = `<p style="margin:0 0 10px 0; color:#aaa;">Z-Index: ${el.zIndex || 1}</p>`;
             if(el.type === 'text') {
                 html += `<label>ข้อความ:</label><input type="text" value="${el.content}" oninput="updateProp('content', this.value)">`;
                 html += `<label>สีตัวอักษร:</label><input type="color" value="${el.color}" oninput="updateProp('color', this.value)">`;
-                html += `<label>ขนาดฟอนต์ (vw):</label><input type="number" step="0.5" value="${el.fontSize}" oninput="updateProp('fontSize', this.value)">`;
+                html += `<label>ขนาด (vw):</label><input type="number" step="0.5" value="${el.fontSize}" oninput="updateProp('fontSize', this.value)">`;
             }
             if(el.type === 'clock') {
                 html += `<label>สีนาฬิกา:</label><input type="color" value="${el.color}" oninput="updateProp('color', this.value)">`;
-                html += `<label>ขนาดฟอนต์ (vw):</label><input type="number" step="0.5" value="${el.fontSize}" oninput="updateProp('fontSize', this.value)">`;
-            }
-            if(el.type === 'image') {
-                html += `<label>Image URL:</label><input type="text" value="${el.url}" oninput="updateProp('url', this.value)">`;
+                html += `<label>ขนาด (vw):</label><input type="number" step="0.5" value="${el.fontSize}" oninput="updateProp('fontSize', this.value)">`;
             }
             if(el.type === 'shape') {
                 html += `<label>สีพื้นหลัง:</label><input type="color" value="${el.bgColor}" oninput="updateProp('bgColor', this.value)">`;
             }
-            if(el.type === 'symbol') {
-                let options = '';
-                for(let key in symbolOptions) { options += `<option value="${key}" ${el.symbol === key ? 'selected' : ''}>${symbolOptions[key]} (${key})</option>`; }
-                html += `<label>เลือกสัญลักษณ์:</label><select onchange="updateProp('symbol', this.value)">${options}</select>`;
-                html += `<label>ขนาดสัญลักษณ์ (vw):</label><input type="number" step="0.5" value="${el.fontSize}" oninput="updateProp('fontSize', this.value)">`;
-            }
-            // Z-Index common
-            html += `<label>ลำดับชั้น (Z-Index):</label><input type="number" value="${el.zIndex}" oninput="updateProp('zIndex', this.value)">`;
             content.innerHTML = html;
         }
 
         window.saveLayout = function() {
             set(ref(db, `signage/${currentScreen}`), elements).then(() => alert('บันทึกหน้าจอเรียบร้อยแล้ว!'));
         }
-
-        loadData();
     </script>
 </body>
 </html>
