@@ -3,29 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Airport Signage Display</title>
-    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&display=swap" rel="stylesheet">
+    <title>Airport Digital Signage</title>
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        body { margin: 0; padding: 0; overflow: hidden; background-color: #000; font-family: 'Chakra Petch', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; transition: background 0.5s ease; }
-        
-        /* Container หลัก */
-        #display-container { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; }
-
-        /* รูปแบบภาพนิ่ง / สไลด์ */
-        .image-display { width: 100%; height: 100%; object-fit: cover; animation: fade 1s ease-in-out; }
-        
-        /* รูปแบบป้ายบอกทาง (Wayfinding) */
-        .wayfinding-display { display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 40px; padding: 50px; text-align: center; width: 100%; height: 100%; box-sizing: border-box; }
-        .wf-text { font-weight: 700; line-height: 1.2; text-shadow: 2px 2px 8px rgba(0,0,0,0.5); }
-        .wf-arrow { font-size: 1.5em; /* ขนาดอิงตามตัวหนังสือ */ }
-
-        @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background-color: #0a0a0a; overflow: hidden; font-family: 'Chakra Petch', sans-serif;
+        }
+        #screen-container {
+            width: 100vw; height: 100vh; position: relative;
+        }
+        .signage-element {
+            position: absolute;
+            transform: translate(-50%, -50%); /* จัดวางพิกัดจากจุดกึ่งกลาง */
+            transition: all 0.5s ease-out; /* แอนิเมชันเวลาแอดมินขยับภาพ */
+        }
+        .signage-text {
+            font-weight: 700;
+            white-space: nowrap;
+        }
     </style>
 </head>
 <body>
 
-    <div id="display-container">
-        <h1 style="color: #fff;">กำลังเชื่อมต่อกับระบบควบคุมสนามบิน...</h1>
+    <div id="screen-container">
+        <!-- ระบบจะวาดป้ายข้อความและรูปภาพแบบ Real-time ลงที่นี่ -->
     </div>
 
     <script type="module">
@@ -36,85 +38,51 @@
             apiKey: "AIzaSyDMptdLpLEdbeVFKZj82M0gyoV2m_2y5Pk",
             authDomain: "suchartstudio-9a78d.firebaseapp.com",
             databaseURL: "https://suchartstudio-9a78d-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "suchartstudio-9a78d"
+            projectId: "suchartstudio-9a78d",
+            storageBucket: "suchartstudio-9a78d.firebasestorage.app",
+            messagingSenderId: "953369646185",
+            appId: "1:953369646185:web:6e52decfba29e9936ebef8"
         };
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // ดึงค่า ID ของหน้าจอจาก URL (เช่น ?id=screen_01)
+        // ดึงชื่อจอจาก URL Parameter (เช่น ?screen=screen_gate1)
         const urlParams = new URLSearchParams(window.location.search);
-        const screenId = urlParams.get('id') || 'screen_01'; // ถ้าไม่ระบุ จะใช้ screen_01 เป็นค่าหลัก
-        
-        const container = document.getElementById('display-container');
-        let slideInterval; // ตัวแปรเก็บ loop สไลด์
+        // ถ้าไม่ได้ระบุ ให้ดึงจอ screen_main เป็นค่า Default
+        const screenId = urlParams.get('screen') || 'screen_main'; 
 
-        // รับคำสั่งจาก Firebase แบบ Real-time
-        onValue(ref(db, `screens/${screenId}`), (snapshot) => {
-            const config = snapshot.val();
-            
-            // ล้างข้อมูลและ Interval เก่าทุกครั้งที่มีคำสั่งใหม่เข้า
-            clearInterval(slideInterval);
-            container.innerHTML = '';
-            document.body.style.backgroundColor = '#000'; // รีเซ็ตสีพื้นหลัง
+        const container = document.getElementById('screen-container');
 
-            if (!config) {
-                container.innerHTML = `<h1 style="color:#555;">ยังไม่มีการตั้งค่าสำหรับจอนี้ (${screenId})</h1>`;
+        // ดึงข้อมูลการจัดวางจาก Firebase แบบ Real-time
+        onValue(ref(db, `signage/${screenId}`), (snapshot) => {
+            const elements = snapshot.val() || [];
+            container.innerHTML = ''; // ล้างหน้าจอเก่า
+
+            if (elements.length === 0) {
+                container.innerHTML = `<h1 style="color:#333; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);">No Content on ${screenId}</h1>`;
                 return;
             }
 
-            // --- วาด UI ตามประเภทคำสั่ง (Type) ---
-            if (config.type === 'wayfinding') {
-                // จัดการหน้าตาป้ายบอกทาง
-                document.body.style.backgroundColor = config.bgColor || '#0a0a0a';
-                
-                const wfDiv = document.createElement('div');
-                wfDiv.className = 'wayfinding-display';
-                wfDiv.style.color = config.textColor || '#ffffff';
-                wfDiv.style.fontSize = config.fontSize || '6rem';
-
-                let arrowHtml = '';
-                if (config.arrow && config.arrow !== 'none') {
-                    arrowHtml = `<span class="wf-arrow">${config.arrow}</span>`;
-                }
-                
-                // ถ้าเป็นลูกศรชี้ซ้าย ให้ลูกศรอยู่หน้าข้อความ นอกนั้นให้อยู่หลัง
-                if (config.arrow === '←') {
-                    wfDiv.innerHTML = `${arrowHtml} <span class="wf-text">${config.text}</span>`;
-                } else {
-                    wfDiv.innerHTML = `<span class="wf-text">${config.text}</span> ${arrowHtml}`;
-                }
-                container.appendChild(wfDiv);
-
-            } else if (config.type === 'static_image') {
-                // จัดการโปสเตอร์ 1 รูป
-                if(config.imageUrl) {
-                    container.innerHTML = `<img src="${config.imageUrl}" class="image-display">`;
+            elements.forEach(el => {
+                let domEl;
+                if (el.type === 'text') {
+                    domEl = document.createElement('div');
+                    domEl.className = 'signage-element signage-text';
+                    domEl.textContent = el.content;
+                    domEl.style.color = el.color;
+                    // ใช้ขนาด vw (Viewport Width) เพื่อให้สเกลตัวอักษรขยายตามทีวี
+                    domEl.style.fontSize = el.size + 'vw'; 
+                } else if (el.type === 'image') {
+                    domEl = document.createElement('img');
+                    domEl.className = 'signage-element';
+                    domEl.src = el.url;
+                    domEl.style.width = el.width + '%'; // ขนาดเทียบกับความกว้างจอ
                 }
 
-            } else if (config.type === 'slider') {
-                // จัดการระบบสไลด์รูปภาพ
-                if (config.images && config.images.length > 0) {
-                    let currentIdx = 0;
-                    const imgElement = document.createElement('img');
-                    imgElement.className = 'image-display';
-                    imgElement.src = config.images[currentIdx];
-                    container.appendChild(imgElement);
-
-                    const intervalTime = (config.interval || 5) * 1000;
-                    
-                    if (config.images.length > 1) {
-                        slideInterval = setInterval(() => {
-                            currentIdx = (currentIdx + 1) % config.images.length;
-                            // ซ่อนรูปเก่า
-                            imgElement.style.opacity = '0';
-                            setTimeout(() => {
-                                imgElement.src = config.images[currentIdx];
-                                imgElement.style.opacity = '1';
-                            }, 300); // ระยะเวลา crossfade
-                        }, intervalTime);
-                    }
-                }
-            }
+                domEl.style.left = el.x + '%';
+                domEl.style.top = el.y + '%';
+                container.appendChild(domEl);
+            });
         });
     </script>
 </body>
