@@ -1,64 +1,73 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="lo">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FIDS Admin - Khon Kaen Airport</title>
-    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=Noto+Sans+Lao:wght@400;600&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #1a1a1a; color: #ffffff; font-family: 'Chakra Petch', sans-serif; margin: 0; padding: 0; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+        body { background-color: #1a1a1a; color: #ffffff; font-family: 'Noto Sans Lao', 'Chakra Petch', sans-serif; margin: 0; padding: 0; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+        
+        /* ปุ่มสลับภาษามุมขวาบน */
+        #lang-switcher { position: fixed; top: 15px; right: 20px; z-index: 10000; display: flex; gap: 5px; }
+        .btn-lang { background: #333; color: white; border: 1px solid #555; padding: 5px 10px; font-size: 1rem; border-radius: 4px; cursor: pointer; width: auto; font-family: sans-serif; }
+        .btn-lang.active { background: #ffcc00; color: #000; font-weight: bold; }
+
         #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0a0a0a; display: flex; justify-content: center; align-items: center; z-index: 9999; flex-direction: column; }
         .login-box { background: #222; padding: 40px; border-radius: 8px; text-align: center; border: 2px solid #ffcc00; }
         .login-box input { padding: 10px; font-size: 1.2rem; width: 80%; margin-bottom: 15px; border-radius: 4px; border: none; text-align: center; }
+        
         .app-container { display: flex; flex: 1; overflow: hidden; display: none; }
         .sidebar { width: 350px; background: #222; padding: 20px; border-right: 2px solid #333; overflow-y: auto; }
         .main-content { flex: 1; padding: 20px; overflow-y: auto; background: #1a1a1a; }
         h2 { border-bottom: 2px solid #ffcc00; padding-bottom: 10px; color: #ffcc00; margin-top: 0; }
         .form-group { margin-bottom: 15px; display: flex; flex-direction: column; }
         label { font-size: 1.1rem; margin-bottom: 5px; color: #ffcc00; }
-        input, select { padding: 10px; font-size: 1.1rem; font-family: 'Chakra Petch'; background: #333; color: white; border: 1px solid #555; border-radius: 4px; }
-        button { background-color: #ffcc00; color: #000; font-size: 1.2rem; font-weight: bold; padding: 12px; border: none; cursor: pointer; border-radius: 4px; width: 100%; transition: 0.2s; }
-        button:hover { background-color: #e6b800; }
+        input, select { padding: 10px; font-size: 1.1rem; font-family: 'Noto Sans Lao', 'Chakra Petch'; background: #333; color: white; border: 1px solid #555; border-radius: 4px; }
+        .btn-main { background-color: #ffcc00; color: #000; font-size: 1.2rem; font-weight: bold; padding: 12px; border: none; cursor: pointer; border-radius: 4px; width: 100%; transition: 0.2s; }
+        .btn-main:hover { background-color: #e6b800; }
         .flight-list { display: grid; gap: 10px; }
         .flight-item { background: #2a2a2a; padding: 15px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid #555; }
         .flight-info { font-size: 1.2rem; }
         .flight-actions { display: flex; gap: 10px; align-items: center; }
         .quick-status { background: #111; color: #ffcc00; border: 1px solid #ffcc00; padding: 8px; font-size: 1.1rem; font-weight: bold; border-radius: 4px; cursor: pointer; }
-        .delete-btn { background-color: #ff3333; color: white; padding: 8px 15px; width: auto; font-size: 1rem; }
+        .delete-btn { background-color: #ff3333; color: white; padding: 8px 15px; width: auto; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem; }
     </style>
 </head>
 <body>
+
+    <div id="lang-switcher">
+        <button class="btn-lang active" onclick="setSysLang('lo')">🇱🇦 ລາວ</button>
+        <button class="btn-lang" onclick="setSysLang('en')">🇬🇧 EN</button>
+        <button class="btn-lang" onclick="setSysLang('th')">🇹🇭 TH</button>
+    </div>
+
     <div id="login-overlay">
         <div class="login-box">
-            <h2 style="border: none;">ระบบจัดการตารางบิน (Admin)</h2>
-            <input type="password" id="passInput" placeholder="ใส่รหัสผ่าน (878556)">
-            <button onclick="checkPassword()">เข้าสู่ระบบ</button>
+            <h2 id="ui_login_title" style="border: none;">ລະບົບຈັດການຕາຕະລາງບິນ</h2>
+            <input type="password" id="passInput" placeholder="ໃສ່ລະຫັດຜ່ານ...">
+            <button class="btn-main" id="ui_btn_login" onclick="checkPassword()">ເຂົ້າສູ່ລະບົບ</button>
         </div>
     </div>
     <div class="app-container" id="main-app">
         <div class="sidebar">
-            <h2>เพิ่มเที่ยวบินใหม่</h2>
+            <h2 id="ui_add_title">ເພີ່ມຖ້ຽວບິນໃໝ່</h2>
             <form id="addFlightForm">
-                <div class="form-group"><label>เวลา (HH:MM)</label><input type="time" id="time" required></div>
-                <div class="form-group"><label>Flight No.</label><input type="text" id="flightNo" required></div>
-                <div class="form-group"><label>สายการบิน</label><input type="text" id="airline" required></div>
-                <div class="form-group"><label>ปลายทาง</label><input type="text" id="destination" required></div>
-                <div class="form-group"><label>ทางออก (Gate)</label><input type="text" id="gate"></div>
+                <div class="form-group"><label id="ui_lbl_time">ເວລາ (HH:MM)</label><input type="time" id="time" required></div>
+                <div class="form-group"><label id="ui_lbl_flight">Flight No.</label><input type="text" id="flightNo" required></div>
+                <div class="form-group"><label id="ui_lbl_airline">ສາຍການບິນ</label><input type="text" id="airline" required></div>
+                <div class="form-group"><label id="ui_lbl_dest">ປາຍທາງ</label><input type="text" id="destination" required></div>
+                <div class="form-group"><label id="ui_lbl_gate">ປະຕູອອກ (Gate)</label><input type="text" id="gate"></div>
                 <div class="form-group">
-                    <label>สถานะเริ่มต้น</label>
+                    <label id="ui_lbl_status">ສະຖານະເລີ່ມຕົ້ນ</label>
                     <select id="status">
-                        <option value="ตรงเวลา">ตรงเวลา</option>
-                        <option value="กำลังขึ้นเครื่อง">กำลังขึ้นเครื่อง</option>
-                        <option value="เรียกขึ้นเครื่องครั้งสุดท้าย">เรียกขึ้นเครื่องครั้งสุดท้าย</option>
-                        <option value="ล่าช้า">ล่าช้า</option>
-                        <option value="ยกเลิก">ยกเลิก</option>
-                    </select>
+                        </select>
                 </div>
-                <button type="submit">บันทึกเที่ยวบิน</button>
+                <button type="submit" class="btn-main" id="ui_btn_save">ບັນທຶກຖ້ຽວບິນ</button>
             </form>
         </div>
         <div class="main-content">
-            <h2>รายการเที่ยวบิน (Active Flights)</h2>
+            <h2 id="ui_list_title">ລາຍການຖ້ຽວບິນ (Active Flights)</h2>
             <div class="flight-list" id="admin-flight-data"></div>
         </div>
     </div>
@@ -81,10 +90,79 @@
         const db = getDatabase(app);
         const flightsRef = ref(db, 'flights');
 
+        // --- ระบบแปลภาษา UI ---
+        const uiDict = {
+            lo: {
+                login_title: "ລະບົບຈັດການຕາຕະລາງບິນ", pass_ph: "ໃສ່ລະຫັດຜ່ານ...", btn_login: "ເຂົ້າສູ່ລະບົບ",
+                add_title: "ເພີ່ມຖ້ຽວບິນໃໝ່", lbl_time: "ເວລາ (HH:MM)", lbl_flight: "Flight No.",
+                lbl_airline: "ສາຍການບິນ", lbl_dest: "ປາຍທາງ", lbl_gate: "ປະຕູອອກ (Gate)", lbl_status: "ສະຖານະເລີ່ມຕົ້ນ",
+                btn_save: "ບັນທຶກຖ້ຽວບິນ", list_title: "ລາຍການຖ້ຽວບິນ (Active Flights)", btn_del: "ລຶບ",
+                s_ontime: "ກົງເວລາ", s_boarding: "ກຳລັງຂຶ້ນເຄື່ອງ", s_final: "ເອີ້ນຂຶ້ນເຄື່ອງຄັ້ງສຸດທ້າຍ", s_delay: "ຊັກຊ້າ", s_cancel: "ຍົກເລີກ",
+                alert_wrong: "ລະຫັດຜ່ານບໍ່ຖືກຕ້ອງ", confirm_del: "ລຶບຖ້ຽວບິນນີ້?", to: "ໄປ:"
+            },
+            en: {
+                login_title: "FIDS Admin System", pass_ph: "Enter password...", btn_login: "Login",
+                add_title: "Add New Flight", lbl_time: "Time (HH:MM)", lbl_flight: "Flight No.",
+                lbl_airline: "Airline", lbl_dest: "Destination", lbl_gate: "Gate", lbl_status: "Initial Status",
+                btn_save: "Save Flight", list_title: "Active Flights", btn_del: "Delete",
+                s_ontime: "ON TIME", s_boarding: "BOARDING", s_final: "FINAL CALL", s_delay: "DELAYED", s_cancel: "CANCELLED",
+                alert_wrong: "Incorrect password", confirm_del: "Delete this flight?", to: "To:"
+            },
+            th: {
+                login_title: "ระบบจัดการตารางบิน", pass_ph: "ใส่รหัสผ่าน...", btn_login: "เข้าสู่ระบบ",
+                add_title: "เพิ่มเที่ยวบินใหม่", lbl_time: "เวลา (HH:MM)", lbl_flight: "Flight No.",
+                lbl_airline: "สายการบิน", lbl_dest: "ปลายทาง", lbl_gate: "ทางออก (Gate)", lbl_status: "สถานะเริ่มต้น",
+                btn_save: "บันทึกเที่ยวบิน", list_title: "รายการเที่ยวบิน (Active Flights)", btn_del: "ลบ",
+                s_ontime: "ตรงเวลา", s_boarding: "กำลังขึ้นเครื่อง", s_final: "เรียกขึ้นเครื่องครั้งสุดท้าย", s_delay: "ล่าช้า", s_cancel: "ยกเลิก",
+                alert_wrong: "รหัสผ่านไม่ถูกต้อง", confirm_del: "ลบเที่ยวบินนี้?", to: "ไป:"
+            }
+        };
+
+        // สถานะที่เก็บใน Firebase จะยึดค่าดั้งเดิมภาษาไทยเสมอเพื่อให้หน้าจอแสดงผลแมปง่าย
+        const statusKeys = ["ตรงเวลา", "กำลังขึ้นเครื่อง", "เรียกขึ้นเครื่องครั้งสุดท้าย", "ล่าช้า", "ยกเลิก"];
+        const statusMap = { "ตรงเวลา": "s_ontime", "กำลังขึ้นเครื่อง": "s_boarding", "เรียกขึ้นเครื่องครั้งสุดท้าย": "s_final", "ล่าช้า": "s_delay", "ยกเลิก": "s_cancel" };
+
+        let sysLang = localStorage.getItem('admin_lang') || 'lo';
+        
+        window.setSysLang = function(lang) {
+            sysLang = lang;
+            localStorage.setItem('admin_lang', lang);
+            document.querySelectorAll('.btn-lang').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            updateUILang();
+        };
+
+        const t = (key) => uiDict[sysLang][key];
+
+        function updateUILang() {
+            document.getElementById('ui_login_title').textContent = t('login_title');
+            document.getElementById('passInput').placeholder = t('pass_ph');
+            document.getElementById('ui_btn_login').textContent = t('btn_login');
+            document.getElementById('ui_add_title').textContent = t('add_title');
+            document.getElementById('ui_lbl_time').textContent = t('lbl_time');
+            document.getElementById('ui_lbl_flight').textContent = t('lbl_flight');
+            document.getElementById('ui_lbl_airline').textContent = t('lbl_airline');
+            document.getElementById('ui_lbl_dest').textContent = t('lbl_dest');
+            document.getElementById('ui_lbl_gate').textContent = t('lbl_gate');
+            document.getElementById('ui_lbl_status').textContent = t('lbl_status');
+            document.getElementById('ui_btn_save').textContent = t('btn_save');
+            document.getElementById('ui_list_title').textContent = t('list_title');
+
+            // อัปเดต Dropdown ฟอร์มเพิ่มข้อมูล
+            const statusSelect = document.getElementById('status');
+            const currentVal = statusSelect.value;
+            statusSelect.innerHTML = statusKeys.map(k => `<option value="${k}">${t(statusMap[k])}</option>`).join('');
+            if(currentVal) statusSelect.value = currentVal;
+
+            renderFlightsList(); // รีเฟรชรายการ
+        }
+
+        // --- Logic ระบบจัดการ ---
         window.checkPassword = function() {
-            // อัปเดตรหัสผ่านใหม่เป็น 878556
-            if(document.getElementById('passInput').value === '878556') { document.getElementById('login-overlay').style.display = 'none'; document.getElementById('main-app').style.display = 'flex'; } 
-            else { alert('รหัสผ่านไม่ถูกต้อง'); }
+            if(document.getElementById('passInput').value === '878556') { 
+                document.getElementById('login-overlay').style.display = 'none'; 
+                document.getElementById('main-app').style.display = 'flex'; 
+            } else { alert(t('alert_wrong')); }
         };
 
         document.getElementById('addFlightForm').addEventListener('submit', (e) => {
@@ -93,19 +171,38 @@
             push(flightsRef, data).then(() => e.target.reset());
         });
 
+        let currentFlightsData = null;
         onValue(flightsRef, (snapshot) => {
-            const data = snapshot.val();
-            const list = document.getElementById('admin-flight-data'); list.innerHTML = '';
-            if (data) {
-                Object.entries(data).sort((a,b)=>a[1].time.localeCompare(b[1].time)).forEach(([id, f]) => {
-                    const statusOptions = ["ตรงเวลา", "กำลังขึ้นเครื่อง", "เรียกขึ้นเครื่องครั้งสุดท้าย", "ล่าช้า", "ยกเลิก"].map(s => `<option value="${s}" ${f.status === s ? 'selected' : ''}>${s}</option>`).join('');
-                    list.innerHTML += `<div class="flight-item"><div class="flight-info"><strong>${f.time} - ${f.flightNo}</strong> (${f.airline})<br><span style="color:#aaa;">ไป: ${f.destination} | Gate: ${f.gate || '-'}</span></div><div class="flight-actions"><select class="quick-status" onchange="quickUpdateStatus('${id}', this.value)">${statusOptions}</select><button class="delete-btn" onclick="delF('${id}')">ลบ</button></div></div>`;
-                });
-            }
+            currentFlightsData = snapshot.val();
+            renderFlightsList();
         });
 
+        function renderFlightsList() {
+            const list = document.getElementById('admin-flight-data'); list.innerHTML = '';
+            if (currentFlightsData) {
+                Object.entries(currentFlightsData).sort((a,b)=>a[1].time.localeCompare(b[1].time)).forEach(([id, f]) => {
+                    const statusOptions = statusKeys.map(k => `<option value="${k}" ${f.status === k ? 'selected' : ''}>${t(statusMap[k])}</option>`).join('');
+                    list.innerHTML += `
+                        <div class="flight-item">
+                            <div class="flight-info">
+                                <strong>${f.time} - ${f.flightNo}</strong> (${f.airline})<br>
+                                <span style="color:#aaa;">${t('to')} ${f.destination} | Gate: ${f.gate || '-'}</span>
+                            </div>
+                            <div class="flight-actions">
+                                <select class="quick-status" onchange="quickUpdateStatus('${id}', this.value)">${statusOptions}</select>
+                                <button class="delete-btn" onclick="delF('${id}')">${t('btn_del')}</button>
+                            </div>
+                        </div>`;
+                });
+            }
+        }
+
         window.quickUpdateStatus = (id, newStatus) => { update(ref(db, `flights/${id}`), { status: newStatus }); };
-        window.delF = (id) => { if(confirm("ลบเที่ยวบินนี้?")) remove(ref(db, `flights/${id}`)); };
+        window.delF = (id) => { if(confirm(t('confirm_del'))) remove(ref(db, `flights/${id}`)); };
+
+        // เซ็ตภาษาเริ่มต้นเมื่อโหลดเสร็จ
+        document.querySelector(`.btn-lang[onclick="setSysLang('${sysLang}')"]`)?.classList.add('active');
+        updateUILang();
     </script>
 </body>
 </html>
