@@ -15,52 +15,13 @@
             --status-delayed: #ff3333;
             --status-boarding: #ffcc00;
         }
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            font-family: 'Chakra Petch', 'Noto Sans SC', sans-serif;
-            margin: 0;
-            padding: 20px;
-            overflow: hidden; 
-        }
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 3px solid var(--accent-yellow);
-            padding-bottom: 15px;
-            margin-bottom: 20px;
-        }
-        .header h1 {
-            margin: 0;
-            font-size: 3.5rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        .header .time {
-            font-size: 3.5rem;
-            font-weight: 700;
-            color: var(--accent-yellow);
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        th {
-            text-align: left;
-            font-size: 1.8rem;
-            color: var(--text-muted);
-            border-bottom: 2px solid #333;
-            padding: 15px 5px;
-        }
-        td {
-            font-size: 2.4rem;
-            font-weight: 600;
-            padding: 15px 5px;
-            border-bottom: 1px solid #222;
-            vertical-align: middle;
-        }
+        body { background-color: var(--bg-color); color: var(--text-main); font-family: 'Chakra Petch', 'Noto Sans SC', sans-serif; margin: 0; padding: 20px; overflow: hidden; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid var(--accent-yellow); padding-bottom: 15px; margin-bottom: 20px; }
+        .header h1 { margin: 0; font-size: 3.5rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+        .header .time { font-size: 3.5rem; font-weight: 700; color: var(--accent-yellow); }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; font-size: 1.8rem; color: var(--text-muted); border-bottom: 2px solid #333; padding: 15px 5px; }
+        td { font-size: 2.4rem; font-weight: 600; padding: 15px 5px; border-bottom: 1px solid #222; vertical-align: middle; }
         .time-col { color: var(--accent-yellow); width: 10%; }
         .flight-col { width: 12%; color: #fff; }
         .logo-col { width: 8%; text-align: center; }
@@ -68,39 +29,22 @@
         .dest-col { width: 22%; }
         .gate-col { width: 10%; text-align: center; }
         .status-col { width: 20%; text-align: right; }
-        
-        .airline-logo {
-            height: 42px;
-            max-width: 100px;
-            object-fit: contain;
-            background-color: #ffffff; 
-            padding: 4px 8px;
-            border-radius: 6px;
-            display: block;
-            margin: 0 auto;
-        }
-
+        .airline-logo { height: 42px; max-width: 100px; object-fit: contain; background-color: #ffffff; padding: 4px 8px; border-radius: 6px; display: block; margin: 0 auto; }
         .status-ON-TIME { color: var(--status-ontime); }
         .status-DELAYED { color: var(--status-delayed); }
         .status-BOARDING { color: var(--status-boarding); animation: blink 1.5s infinite; }
         .status-FINAL-CALL { color: var(--status-delayed); animation: blink 1s infinite; }
         .status-CANCELLED { color: var(--text-muted); text-decoration: line-through; }
-
         @keyframes blink { 50% { opacity: 0; } }
         .fade-in { animation: fadeIn 0.5s ease-in-out; }
-        @keyframes fadeIn {
-            0% { opacity: 0; transform: translateY(-5px); }
-            100% { opacity: 1; transform: translateY(0); }
-        }
+        @keyframes fadeIn { 0% { opacity: 0; transform: translateY(-5px); } 100% { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
-
     <div class="header">
         <h1 id="page-title">ขาออก (DEPARTURES)</h1>
         <div class="time" id="clock">00:00</div>
     </div>
-
     <table id="fids-table" class="fade-in">
         <thead>
             <tr>
@@ -121,141 +65,60 @@
         import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
 
         const firebaseConfig = {
-            apiKey: "AIzaSyDMptdLpLEdbeVFKZj82M0gyoV2m_2y5Pk",
-            authDomain: "suchartstudio-9a78d.firebaseapp.com",
-            databaseURL: "https://suchartstudio-9a78d-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "suchartstudio-9a78d",
-            storageBucket: "suchartstudio-9a78d.firebasestorage.app",
-            messagingSenderId: "953369646185",
-            appId: "1:953369646185:web:6e52decfba29e9936ebef8"
+            apiKey: "AIzaSyC0kMrUtVNSIzlAF9Rm6pSlJQ5eRZ3pk90",
+            authDomain: "signage-b807a.firebaseapp.com",
+            databaseURL: "https://signage-b807a-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "signage-b807a",
+            storageBucket: "signage-b807a.firebasestorage.app",
+            messagingSenderId: "777605695730",
+            appId: "1:777605695730:web:6692edc233eb40ee4be86b",
+            measurementId: "G-5B03W79Q19"
         };
-
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // จับคู่โลโก้จากชื่อสายการบิน (อิงข้อมูลสนามบินขอนแก่น)
         const autoAirlineLogos = {
-            "การบินไทย": "https://raw.githubusercontent.com/suchartstudio/signageairport/refs/heads/main/Thai.png",
-            "ไทยแอร์เอเชีย": "https://raw.githubusercontent.com/suchartstudio/signageairport/refs/heads/main/AirAsia.png",
-            "ไทยเวียตเจ็ท": "https://raw.githubusercontent.com/suchartstudio/signageairport/refs/heads/main/vietjet.png",
-            "ไทยไลอ้อนแอร์": "https://raw.githubusercontent.com/suchartstudio/signageairport/refs/heads/main/lion.png"
+            "การบินไทย": "https://upload.wikimedia.org/wikipedia/commons/c/c6/Thai_Airways_International_logo.svg",
+            "ไทยแอร์เอเชีย": "https://upload.wikimedia.org/wikipedia/commons/f/f5/AirAsia_New_Logo.svg",
+            "ไทยเวียตเจ็ท": "https://upload.wikimedia.org/wikipedia/commons/5/5e/VietJet_Air_logo.svg",
+            "ไทยไลอ้อนแอร์": "https://upload.wikimedia.org/wikipedia/commons/4/44/Lion_Air_logo.svg"
         };
-
-        // สไตล์สถานะ
-        const statusStyleMap = {
-            "ตรงเวลา": "status-ON-TIME",
-            "กำลังขึ้นเครื่อง": "status-BOARDING",
-            "เรียกขึ้นเครื่องครั้งสุดท้าย": "status-FINAL-CALL",
-            "ล่าช้า": "status-DELAYED",
-            "ยกเลิก": "status-CANCELLED"
-        };
-
-        // พจนานุกรมแปลอัตโนมัติ โดยอ้างอิงคีย์หลักเป็น "ภาษาไทย"
+        const statusStyleMap = { "ตรงเวลา": "status-ON-TIME", "กำลังขึ้นเครื่อง": "status-BOARDING", "เรียกขึ้นเครื่องครั้งสุดท้าย": "status-FINAL-CALL", "ล่าช้า": "status-DELAYED", "ยกเลิก": "status-CANCELLED" };
+        
         const dictionary = {
-            th: {
-                title: "ขาออก (Khon Kaen Airport - Departures)",
-                headers: { time: "เวลา", flight: "Flight No.", logo: "โลโก้", airline: "สายการบิน", dest: "ปลายทาง", gate: "ทางออก", status: "สถานะ" },
-                status: { "ตรงเวลา": "ตรงเวลา", "กำลังขึ้นเครื่อง": "กำลังขึ้นเครื่อง", "เรียกขึ้นเครื่องครั้งสุดท้าย": "เรียกขึ้นเครื่องครั้งสุดท้าย", "ล่าช้า": "ล่าช้า", "ยกเลิก": "ยกเลิก" },
-                places: { "สุวรรณภูมิ": "สุวรรณภูมิ", "ดอนเมือง": "ดอนเมือง", "เชียงใหม่": "เชียงใหม่" },
-                airlines: { "การบินไทย": "การบินไทย", "ไทยแอร์เอเชีย": "ไทยแอร์เอเชีย", "ไทยเวียตเจ็ท": "ไทยเวียตเจ็ท", "ไทยไลอ้อนแอร์": "ไทยไลอ้อนแอร์" }
-            },
-            en: {
-                title: "Khon Kaen Airport - Departures",
-                headers: { time: "Time", flight: "Flight No.", logo: "Logo", airline: "Airline", dest: "Destination", gate: "Gate", status: "Status" },
-                status: { "ตรงเวลา": "ON TIME", "กำลังขึ้นเครื่อง": "BOARDING", "เรียกขึ้นเครื่องครั้งสุดท้าย": "FINAL CALL", "ล่าช้า": "DELAYED", "ยกเลิก": "CANCELLED" },
-                places: { "สุวรรณภูมิ": "SUVARNABHUMI", "ดอนเมือง": "DON MUEANG", "เชียงใหม่": "CHIANG MAI" },
-                airlines: { "การบินไทย": "THAI AIRWAYS", "ไทยแอร์เอเชีย": "THAI AIRASIA", "ไทยเวียตเจ็ท": "THAI VIETJET", "ไทยไลอ้อนแอร์": "THAI LION AIR" }
-            },
-            zh: {
-                title: "出发 (Khon Kaen Airport - Departures)",
-                headers: { time: "时间", flight: "Flight No.", logo: "标志", airline: "航空公司", dest: "目的地", gate: "登机口", status: "状态" },
-                status: { "ตรงเวลา": "准点", "กำลังขึ้นเครื่อง": "登机中", "เรียกขึ้นเครื่องครั้งสุดท้าย": "最后呼叫", "ล่าช้า": "延误", "ยกเลิก": "取消" },
-                places: { "สุวรรณภูมิ": "素万那普", "ดอนเมือง": "廊曼", "เชียงใหม่": "清迈" },
-                airlines: { "การบินไทย": "泰国航空", "ไทยแอร์เอเชีย": "泰国亚洲航空", "ไทยเวียตเจ็ท": "泰国越捷航空", "ไทยไลอ้อนแอร์": "泰国狮航" }
-            }
+            th: { title: "ขาออก (DEPARTURES)", headers: { time: "เวลา", flight: "Flight No.", logo: "โลโก้", airline: "สายการบิน", dest: "ปลายทาง", gate: "ทางออก", status: "สถานะ" }, status: { "ตรงเวลา": "ตรงเวลา", "กำลังขึ้นเครื่อง": "กำลังขึ้นเครื่อง", "เรียกขึ้นเครื่องครั้งสุดท้าย": "เรียกขึ้นเครื่องครั้งสุดท้าย", "ล่าช้า": "ล่าช้า", "ยกเลิก": "ยกเลิก" }, places: { "สุวรรณภูมิ": "สุวรรณภูมิ", "ดอนเมือง": "ดอนเมือง", "เชียงใหม่": "เชียงใหม่" }, airlines: { "การบินไทย": "การบินไทย", "ไทยแอร์เอเชีย": "ไทยแอร์เอเชีย", "ไทยเวียตเจ็ท": "ไทยเวียตเจ็ท", "ไทยไลอ้อนแอร์": "ไทยไลอ้อนแอร์" } },
+            en: { title: "DEPARTURES", headers: { time: "Time", flight: "Flight No.", logo: "Logo", airline: "Airline", dest: "Destination", gate: "Gate", status: "Status" }, status: { "ตรงเวลา": "ON TIME", "กำลังขึ้นเครื่อง": "BOARDING", "เรียกขึ้นเครื่องครั้งสุดท้าย": "FINAL CALL", "ล่าช้า": "DELAYED", "ยกเลิก": "CANCELLED" }, places: { "สุวรรณภูมิ": "SUVARNABHUMI", "ดอนเมือง": "DON MUEANG", "เชียงใหม่": "CHIANG MAI" }, airlines: { "การบินไทย": "THAI AIRWAYS", "ไทยแอร์เอเชีย": "THAI AIRASIA", "ไทยเวียตเจ็ท": "THAI VIETJET", "ไทยไลอ้อนแอร์": "THAI LION AIR" } },
+            zh: { title: "出发 (DEPARTURES)", headers: { time: "时间", flight: "Flight No.", logo: "标志", airline: "航空公司", dest: "目的地", gate: "登机口", status: "状态" }, status: { "ตรงเวลา": "准点", "กำลังขึ้นเครื่อง": "登机中", "เรียกขึ้นเครื่องครั้งสุดท้าย": "最后呼叫", "ล่าช้า": "延误", "ยกเลิก": "取消" }, places: { "สุวรรณภูมิ": "素万那普", "ดอนเมือง": "廊曼", "เชียงใหม่": "清迈" }, airlines: { "การบินไทย": "泰国航空", "ไทยแอร์เอเชีย": "泰国亚洲航空", "ไทยเวียตเจ็ท": "泰国越捷航空", "ไทยไลอ้อนแอร์": "泰国狮航" } }
         };
 
-        const languages = ['th', 'en', 'zh'];
-        let currentLangIndex = 0;
-        let flightList = []; 
-
-        function updateClock() {
-            const now = new Date();
-            document.getElementById('clock').textContent = now.toLocaleTimeString('en-US', { hour12: false }).substring(0, 5);
-        }
-        setInterval(updateClock, 1000);
-        updateClock();
+        const languages = ['th', 'en', 'zh']; let currentLangIndex = 0; let flightList = []; 
+        function updateClock() { document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-US', { hour12: false }).substring(0, 5); }
+        setInterval(updateClock, 1000); updateClock();
 
         function renderUI() {
-            const lang = languages[currentLangIndex];
-            const dict = dictionary[lang];
-
+            const lang = languages[currentLangIndex]; const dict = dictionary[lang];
             const tableElement = document.getElementById('fids-table');
-            tableElement.classList.remove('fade-in');
-            void tableElement.offsetWidth;
-            tableElement.classList.add('fade-in');
+            tableElement.classList.remove('fade-in'); void tableElement.offsetWidth; tableElement.classList.add('fade-in');
 
-            document.getElementById('page-title').textContent = dict.title;
-            document.getElementById('th-time').textContent = dict.headers.time;
-            document.getElementById('th-flight').textContent = dict.headers.flight; 
-            document.getElementById('th-logo').textContent = dict.headers.logo;
-            document.getElementById('th-airline').textContent = dict.headers.airline;
-            document.getElementById('th-dest').textContent = dict.headers.dest;
-            document.getElementById('th-gate').textContent = dict.headers.gate;
-            document.getElementById('th-status').textContent = dict.headers.status;
+            document.getElementById('page-title').textContent = dict.title; document.getElementById('th-time').textContent = dict.headers.time; document.getElementById('th-flight').textContent = dict.headers.flight; document.getElementById('th-logo').textContent = dict.headers.logo; document.getElementById('th-airline').textContent = dict.headers.airline; document.getElementById('th-dest').textContent = dict.headers.dest; document.getElementById('th-gate').textContent = dict.headers.gate; document.getElementById('th-status').textContent = dict.headers.status;
 
-            const tbody = document.getElementById('flight-data');
-            tbody.innerHTML = '';
-
+            const tbody = document.getElementById('flight-data'); tbody.innerHTML = '';
             flightList.forEach(flight => {
-                const rawStatus = flight.status.trim();
-                const rawAirline = flight.airline.trim();
-                const rawDest = flight.destination.trim();
-
+                const rawStatus = flight.status.trim(); const rawAirline = flight.airline.trim(); const rawDest = flight.destination.trim();
                 const statusClass = statusStyleMap[rawStatus] || "status-ON-TIME";
-                
-                const translatedStatus = dict.status[rawStatus] || rawStatus;
-                const translatedDest = dict.places[rawDest] || rawDest;
-                const translatedAirline = dict.airlines[rawAirline] || rawAirline;
-                
+                const translatedStatus = dict.status[rawStatus] || rawStatus; const translatedDest = dict.places[rawDest] || rawDest; const translatedAirline = dict.airlines[rawAirline] || rawAirline;
                 const finalLogoUrl = autoAirlineLogos[rawAirline] || flight.logoUrl;
-                const logoHtml = finalLogoUrl 
-                    ? `<img src="${finalLogoUrl}" class="airline-logo" onerror="this.style.display='none'">` 
-                    : `-`;
-
-                const row = `
-                    <tr>
-                        <td class="time-col">${flight.time}</td>
-                        <td class="flight-col">${flight.flightNo}</td>
-                        <td class="logo-col">${logoHtml}</td>
-                        <td class="airline-col">${translatedAirline}</td>
-                        <td class="dest-col">${translatedDest}</td>
-                        <td class="gate-col">${flight.gate || '-'}</td>
-                        <td class="status-col ${statusClass}">${translatedStatus}</td>
-                    </tr>
-                `;
-                tbody.innerHTML += row;
+                const logoHtml = finalLogoUrl ? `<img src="${finalLogoUrl}" class="airline-logo" onerror="this.style.display='none'">` : `-`;
+                tbody.innerHTML += `<tr><td class="time-col">${flight.time}</td><td class="flight-col">${flight.flightNo}</td><td class="logo-col">${logoHtml}</td><td class="airline-col">${translatedAirline}</td><td class="dest-col">${translatedDest}</td><td class="gate-col">${flight.gate || '-'}</td><td class="status-col ${statusClass}">${translatedStatus}</td></tr>`;
             });
         }
 
-        const flightsRef = ref(db, 'flights');
-        onValue(flightsRef, (snapshot) => {
+        onValue(ref(db, 'flights'), (snapshot) => {
             const data = snapshot.val();
-            if (data) {
-                flightList = Object.entries(data).map(([key, val]) => ({ id: key, ...val }));
-                flightList.sort((a, b) => a.time.localeCompare(b.time));
-                renderUI(); 
-            } else {
-                flightList = [];
-                document.getElementById('flight-data').innerHTML = '';
-            }
+            if (data) { flightList = Object.entries(data).map(([key, val]) => ({ id: key, ...val })); flightList.sort((a, b) => a.time.localeCompare(b.time)); renderUI(); }
+            else { flightList = []; document.getElementById('flight-data').innerHTML = ''; }
         });
-
-        // วนลูปสลับหน้าจอ 3 ภาษา
-        setInterval(() => {
-            currentLangIndex = (currentLangIndex + 1) % languages.length;
-            renderUI();
-        }, 30000);
+        setInterval(() => { currentLangIndex = (currentLangIndex + 1) % languages.length; renderUI(); }, 30000);
     </script>
 </body>
 </html>
